@@ -133,3 +133,11 @@ Ardından var olan diğer `tests/*.test.js` dosyalarıyla hesaplama regresyon te
 - Prim karşılaştırması nominal TL yüzdesidir. Enflasyon düzeltmesi, gerçek teminat kapsam eşitliği, hasar sonrası fiyat değişimi veya prim yeniden değerleme bu sürümde yapılmaz.
 - Firebase veri şeması v17; `coverage.warranties`, `coverage.extensions`, `coverage.policies`, `coverage.warnings`. Var olan şarj, tüketim, SOC, SOH, menzil, bakım ve geçmiş sürüş kayıtları migrate edilir. Firebase tek kullanıcı kuralları korunur.
 - Garanti/hasar kararları hukuki güvence veya poliçe kapsam teyidi yerine geçmez. Belge bağlantısı yalnız HTTPS; uygulama bu sürümde Drive dosyasının kendisini yüklemez. Yerel/hesap testleri canlı Firebase doğrulaması değildir.
+
+## Faz 4 (v0.13.0) doğrulama kapsamı
+
+- Dört farklı nesne: `service.components`, `service.visits`, `service.issues`, `service.actions`.
+- İkinci servis ziyareti ve **aynı vaka** tekrar sayılmaz; ikinci **bağımsız vaka** veya ikinci **parça değişimi** tekrar olarak işaretlenir.
+- Garanti/kasko `coverageRecordId` bağları teminat kararından bağımsız tutulur; poliçe referansı kaldırılırsa işlem kaydı korunur, "bağlı kayıt bulunamıyor" olarak belirtilir.
+- Servis ziyaretini/arıza vakasını/bileşeni silmek, ona bağlı kayıtlar mevcutken engellenir. Tarih ve maliyet doğrulamaları, belge URL'sinin HTTPS olması, aynı bileşen/parça katalog mükerrerliği kontrol edilir.
+- `service-model.js` CommonJS + tarayıcı modülünde test edilir; tüm önceki Node model testleri ve ağsız mobil Chromium servis kaydı akışı çalıştırılmıştır. Canlı Firebase / gerçek iOS oturumu bu testlerin kapsamı dışındadır.

@@ -193,3 +193,13 @@ GitHub'a v0.9.6 dosyalarını yükledikten sonra önceki service worker önbelle
 - **Sigorta & Kasko** bölümünde trafik ve kasko poliçelerini ayrı ayrı kaydedin. Eski poliçeleri silmeyin: yenileme karşılaştırması için geçmiş veriye ihtiyaç vardır.
 - İçe alma / dışa aktarma JSON, yeni `coverage` kayıtlarını da içerir. Belgelerin kendisi değil, yalnızca URL bağlantısı saklanır.
 - Uyarılar uygulama açıldığında hesaplanır. Otomatik e-posta / bildirim henüz yoktur.
+
+## v0.13.0 – Faz 4 yükseltme
+
+1. Mevcut uygulamada **JSON Yedekle** ile güncel yedeği saklayın.
+2. ZIP içindeki `t10x_arac_batarya_v0.13.0/` klasörünün **içindeki tüm dosyaları** GitHub Pages deponuzun kök dizinine taşıyın; `index.html`, `app.js`, `app.css`, `service-model.js` ve `sw.js` aynı sürüm olmalıdır.
+3. Eski Firebase güvenlik kurallarını, kullanıcı UID'sini, giriş bilgilerini veya veritabanı adresini değiştirmeyin. Yeni `service` alanı mevcut kullanıcının kayıt nesnesine eklenir.
+4. GitHub Pages üzerinden giriş yapıp **Servis & Arızalar** sayfasını açın; sırayla bileşen, servis ziyareti, arıza ve müdahale eklemeyi test edin. Kayıt sonrası sayfayı yenileyip girdilerin korunduğunu doğrulayın. Test kayıtlarını silin.
+5. İlişkili servis belgelerini herkese açık GitHub'a değil, erişimi sınırlı Google Drive vb. bir alana yükleyip bağlantılarını saklayın.
+
+**Önemli:** Servis ve poliçe kayıtlarındaki açıklamalar gerçek belgeleri esas alır. Poliçe seçmek, garanti kapsamının otomatik onaylandığı anlamına gelmez.

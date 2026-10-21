@@ -282,3 +282,32 @@ Mevcut araç/batarya analizleri ve Faz 2 bakım kayıtları korunmuştur. Yeni a
 Yeni model `coverage-model.js` ve `db.coverage` nesnesidir. Veri şeması `17`, yerel kayıt anahtarı `t10xBatteryTracker_v16` olarak ilerler; eski `v15` ve daha önceki yerel kayıtları okuyarak aktarır. Firebase Realtime Database altında mevcut kullanıcı kaydının JSON nesnesine yeni `coverage` alanı eklenir. Tek kullanıcı güvenlik kuralları değiştirilmez.
 
 **Önemli:** Üreticinin garanti koşulları, sözleşme/poliçe kapsamı ve başlangıç tarihi aracınıza ait belgeden doğrulanmalıdır. Ek sigorta, otomatik üretici garantisi değildir. Sadece HTTPS belge bağlantıları kabul edilir; dosyaları herkese açık GitHub deposuna koymayın. Bu sürüm belgeyi uygulamaya yüklemez, erişim kontrollü bağlantısını saklar. Hasar/servis/parça değişimi eşleştirmesi Faz 4'tedir.
+
+---
+
+## v0.13.0 — Faz 4: Yetkili Servis, Arıza ve Parça Değişimi (22 Ekim 2026)
+
+Yeni **Servis & Arızalar** menüsü ile Dashboard'a servis özeti eklenmiştir. Önceki şarj, batarya, sürüş, bakım, garanti, trafik sigortası ve kasko kayıtları korunur.
+
+### Veri modeli ve giriş sırası
+
+1. **Servis ziyareti:** Servise giriş/çıkış tarihi, kilometre, servis adı, iş emri, planlandı/serviste/tamamlandı/iptal durumu, toplam bedel, kullanıcının ödediği tutar, varsa önceki bakım kaydı ve özel erişimli belge bağlantısı.
+2. **Bileşen kataloğu (isteğe bağlı ama tekrar analizi için gerekli):** Tek bir standart bileşen adı, varsa parça numarası/revizyonu. Tekrarlayan sorunlarda **aynı katalog kaydı** seçilir.
+3. **Arıza vakası:** İlgili ilk servis ziyareti, bildirim tarihi, belirti, bileşen, durumu (açık/incelemede/takipte/çözüldü/çözülmedi), varsa **önceki farklı arıza vakasıyla** bağlantı. İkinci servis ziyareti aynı açık sorun içinse yeni vaka açmayın; sonraki servis işleminde **önceki vakayı** kullanın.
+4. **Müdahale / parça değişimi:** İlgili servis ziyareti ve isteğe bağlı arıza vakası, işlem türü, tarih, çıkarılan/takılan parça kodları, işlem bedeli/kullanıcının ödediği miktar, belge, garanti/kasko/ek teminat türü, somut poliçe veya teminat referansı ve **karşılama kararı**.
+
+### Analiz, rapor ve korumalar
+
+- **Tekrarlama uyarısı**, aynı katalog bileşeni için *en az iki ayrı arıza vakası* veya *en az iki parça değişimi* mevcutsa gösterilir. Aynı açık arıza için iki servis ziyareti iki vaka sayılmaz. Bu eşikler **teknik takip göstergesidir**, üretim hatası veya hukuki kusur kararı değildir.
+- Dashboard servis/arıza, açık işler ve tekrar eden bileşen sayılarını gösterir; ayrıntılı listelerde düzenleme/silme ve ziyaret durumu filtresi vardır.
+- **CSV dışa aktarımı** dört kayıt türünü (ziyaret, arıza, işlem, bileşen) birlikte verir. JSON yedeği ve Firebase tam kayıt senkronizasyonuna `db.service` dahildir.
+- İlişkili işlemleri olan bir arıza/ziyaret/bileşen doğrudan silinemez; önce bağlantılar düzeltilmelidir. Servis ziyareti ile Faz 2 bakım kaydı birbirine bağlanır ama bakım takvimini kendiliğinden değiştirmez.
+- **Garanti, kasko veya poliçe seçimi otomatik ücretsiz onarım onayı değildir.** Servisin kabul/red kararı ayrı kullanıcı girdisidir. Genel garanti başlangıcı, poliçe kapsamı ve belge koşulları kullanıcı belgeleriyle doğrulanmalıdır.
+- Servis ziyareti toplam maliyeti ile tek tek işlemlerin maliyetleri, toplam harcama göstergesinde üst üste toplanmaz; mükerrer maliyet sayılmaz. Boş tutar **bilinmiyor**, sıfır **0 ₺** anlamına gelir.
+- Belge yükleme bu sürümün kapsamı değildir. **Yalnızca HTTPS belge bağlantısı** saklanır; Drive dosya erişim izinleri kullanıcı tarafından yönetilir. Özel belgelerinizi herkese açık GitHub deposuna yüklemeyin.
+
+### Teknik not
+
+- Yeni dosya: `service-model.js` (ayrıca `tests/service-model.test.js`). Veri şeması **18**; mevcut yerel anahtar `t10xBatteryTracker_v16` korunur; mevcut Firebase UID / güvenlik kuralları değişmez. Firebase JSON nesnesinde `service` alanı açılır. Eski veriler migration sırasında yerinde korunur.
+- Service worker önbelleği `t10x-battery-v0.13.0-service` olarak yenilendi. Tüm dosyaları birlikte GitHub Pages kök dizinine yükleyin.
+- JS ve model testleri ile Firebase'siz mobil Chromium lokal testi yapılmıştır. Gerçek Firebase bağlantısı ve iPhone Safari testi üretim ortamında kullanıcı tarafından doğrulanmalıdır.

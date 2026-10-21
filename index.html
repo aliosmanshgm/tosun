@@ -9,7 +9,7 @@
   <meta name="apple-mobile-web-app-title" content="T10X Araç" />
   <meta name="mobile-web-app-capable" content="yes" />
   <link rel="manifest" href="manifest.webmanifest" />
-  <title>T10X Araç & Batarya Takip v0.12.0 · Garanti ve Poliçeler</title>
+  <title>T10X Araç & Batarya Takip v0.13.0 · Servis ve Arıza Takibi</title>
   <link rel="stylesheet" href="app.css" />
 </head>
 <body>
@@ -51,6 +51,7 @@
     <button class="tab" data-tab="maintenance">Periyodik Bakım</button>
     <button class="tab" data-tab="warranty">Garantiler & Uzatmalar</button>
     <button class="tab" data-tab="insurance">Sigorta & Kasko</button>
+    <button class="tab" data-tab="service">Servis & Arızalar</button>
     <button class="tab" data-tab="trips">Tüketim / Sürüş</button>
     <button class="tab" data-tab="planner">Şarj Planlayıcı</button>
     <button class="tab" data-tab="soh">SOH Testleri</button>
@@ -83,6 +84,7 @@
         <article class="card coverage-dashboard-card"><div class="card-head"><h2>Araç & Batarya Garantileri</h2><button type="button" class="link-btn" data-goto="warranty">Yönet</button></div><div id="warrantyDashboard" aria-live="polite"></div></article>
         <article class="card coverage-dashboard-card"><div class="card-head"><h2>Trafik Sigortası & Kasko</h2><button type="button" class="link-btn" data-goto="insurance">Poliçeleri aç</button></div><div id="insuranceDashboard" aria-live="polite"></div></article>
       </div>
+      <article class="card service-dashboard-card"><div class="card-head"><h2>Servis & Arıza Takibi</h2><button type="button" class="link-btn" data-goto="service">Servis kayıtlarını aç</button></div><div id="serviceDashboard" aria-live="polite"></div></article>
       <article class="card range-dashboard-card" id="rangeDashboard" aria-live="polite"></article>
       <article class="card seasonal-dashboard-card" id="seasonalRangeDashboard" aria-live="polite"></article>
       <div class="grid two">
@@ -237,7 +239,7 @@
             <label class="span-2">Belge bağlantısı · isteğe bağlı <input id="maintenanceDocumentUrl" type="url" placeholder="https://drive.google.com/... (erişimi kısıtlı)"></label>
             <label class="span-2">Notlar <textarea id="maintenanceNotes" maxlength="4000" rows="2" placeholder="İş emri no, gözlemler, sonraki takip... "></textarea></label>
           </div>
-          <p class="muted">Bu fazda servis işlemleri serbest metin olarak saklanır. Arıza/parça değişimi, tekrar analizi ve garanti eşleştirmesi ileride ayrı kayıt modeliyle eklenecek.</p>
+          <p class="muted">Bakım kaydı burada korunur. Ayrı bir servis ziyareti ve arıza/parça değişimi kaydı gerekiyorsa “Servis & Arızalar” menüsüne geçip ilgili bakım kaydını bağlayın.</p>
           <div class="form-actions"><button type="submit" id="maintenanceRecordSubmit">Bakımı Kaydet</button><button type="button" class="secondary" id="maintenanceRecordReset">Temizle</button></div>
           <p id="maintenanceRecordFeedback" class="maintenance-feedback" role="status" aria-live="polite"></p>
         </form>
@@ -248,6 +250,99 @@
       </article>
     </section>
 
+
+    <section id="service" class="panel service-panel">
+      <div class="section-title"><div><h2>Yetkili Servis, Arıza & Parça Takibi</h2><p>Servis ziyaretlerini, ayrı arıza vakalarını ve yapılan müdahaleleri birbirine bağlayın. Aynı sorunun tekrarlanmasını görün.</p></div><button id="serviceExportCsv" type="button" class="secondary">Servis / Arıza / İşlem CSV İndir</button></div>
+      <div class="info-box"><strong>Nasıl kullanılır?</strong> 1) Servis ziyareti ekleyin. 2) Varsa arızayı o ziyarete bağlayın. 3) Yapılan işlemi ve değişen parçayı kaydedin. Aynı açık arızaya ikinci kez gidiyorsanız yeni arıza açmayıp <strong>mevcut arızayı seçin</strong>. İşlemin garanti/kasko kapsamında karşılanması ayrı bir servis kararıdır; poliçe varlığı otomatik onay sayılmaz.</div>
+      <div id="serviceOverview" class="service-overview" aria-live="polite"></div>
+      <div class="service-editor-grid">
+        <form id="serviceVisitForm" class="form-card">
+          <h2 id="serviceVisitTitle">1. Servis ziyareti ekle</h2>
+          <input id="svVisitId" type="hidden" />
+          <div class="form-grid maintenance-form-grid">
+            <label>Giriş tarihi <input id="svVisitEntry" type="date" required /></label>
+            <label>Çıkış tarihi (varsa) <input id="svVisitExit" type="date" /></label>
+            <label>Giriş kilometresi <input id="svVisitOdo" type="number" min="0" step="1" placeholder="Bilinmiyorsa boş" /></label>
+            <label>Durum <select id="svVisitStatus"><option value="planned">Planlandı</option><option value="active">Serviste</option><option value="closed">Tamamlandı</option><option value="cancelled">İptal</option></select></label>
+            <label class="span-2">Servis merkezi <input id="svVisitCenter" maxlength="160" placeholder="Örn. Ankara yetkili servis" /></label>
+            <label>İş emri / dosya numarası <input id="svVisitOrder" maxlength="120" /></label>
+            <label>İlgili bakım kaydı (isteğe bağlı) <select id="svVisitMaintenance"><option value="">Bağlantı yok</option></select></label>
+            <label>Toplam işlem bedeli (₺) <input id="svVisitCost" type="number" min="0" step="0.01" placeholder="Bilinmiyorsa boş" /></label>
+            <label>Benim ödediğim (₺) <input id="svVisitPaid" type="number" min="0" step="0.01" placeholder="Bilinmiyorsa boş" /></label>
+            <label class="span-2">İş emri / servis belgesi (HTTPS) <input id="svVisitDoc" type="url" placeholder="https://drive.google.com/..." /></label>
+            <label class="span-2">Açıklama <textarea id="svVisitNotes" maxlength="4000" rows="2"></textarea></label>
+          </div>
+          <div class="form-actions"><button type="submit">Ziyareti Kaydet</button><button id="svVisitClear" type="button" class="secondary">Temizle</button></div>
+          <p id="svVisitFeedback" class="maintenance-feedback" role="status"></p>
+        </form>
+        <form id="serviceComponentForm" class="form-card">
+          <h2 id="serviceComponentTitle">Bileşen / parça kataloğu</h2>
+          <p class="muted">Tekrar analizi için aynı parçayı aynı katalog kaydından seçin. Parça numarasını bilmiyorsanız boş bırakın.</p>
+          <input id="svCompId" type="hidden" />
+          <div class="form-grid maintenance-form-grid">
+            <label class="span-2">Bileşen adı <input id="svCompName" required maxlength="150" placeholder="Örn. Ön kamera, multimedya ekranı, klima kompresörü" /></label>
+            <label>Parça numarası (isteğe bağlı) <input id="svCompNumber" maxlength="120" /></label>
+            <label>Parça revizyonu (isteğe bağlı) <input id="svCompRevision" maxlength="100" /></label>
+            <label class="span-2">Not <textarea id="svCompNotes" rows="2" maxlength="2000"></textarea></label>
+          </div>
+          <div class="form-actions"><button type="submit">Bileşeni Kaydet</button><button id="svCompClear" class="secondary" type="button">Temizle</button></div>
+          <p id="svCompFeedback" class="maintenance-feedback" role="status"></p>
+          <div id="serviceComponentList" class="service-history" aria-live="polite"></div>
+        </form>
+      </div>
+      <div class="service-editor-grid">
+        <form id="serviceIssueForm" class="form-card">
+          <h2 id="serviceIssueTitle">2. Arıza / şikâyet vakası</h2>
+          <input id="svIssueId" type="hidden" />
+          <div class="form-grid maintenance-form-grid">
+            <label>İlk bildirilen servis ziyareti <select id="svIssueVisit" required></select></label>
+            <label>Arıza bildirim tarihi <input id="svIssueDate" type="date" required /></label>
+            <label class="span-2">Sorunun adı <input id="svIssueName" maxlength="180" required placeholder="Örn. Kamera görüntüsü kesiliyor" /></label>
+            <label>Bileşen / parça <select id="svIssueComponent"></select></label>
+            <label>Durum <select id="svIssueStatus"><option value="open">Açık</option><option value="investigating">İncelemede</option><option value="monitoring">Takipte</option><option value="resolved">Çözüldü</option><option value="unresolved">Çözülmedi</option></select></label>
+            <label class="span-2">Tekrarlanan önceki arıza (varsa) <select id="svIssueRelated"><option value="">Bağımsız / ilk arıza</option></select></label>
+            <label class="span-2">Belirti / açıklama <textarea id="svIssueSymptom" rows="2" maxlength="4000"></textarea></label>
+            <label class="span-2">Servis sonucu / takip notu <textarea id="svIssueNotes" rows="2" maxlength="4000"></textarea></label>
+          </div>
+          <div class="form-actions"><button type="submit">Arızayı Kaydet</button><button id="svIssueClear" class="secondary" type="button">Temizle</button></div>
+          <p id="svIssueFeedback" class="maintenance-feedback" role="status"></p>
+        </form>
+        <form id="serviceActionForm" class="form-card">
+          <h2 id="serviceActionTitle">3. Yapılan işlem / parça değişimi</h2>
+          <input id="svActionId" type="hidden" />
+          <div class="form-grid maintenance-form-grid">
+            <label>İlgili servis ziyareti <select id="svActionVisit" required></select></label>
+            <label>İşlem tarihi <input id="svActionDate" type="date" required /></label>
+            <label>İlgili arıza (isteğe bağlı) <select id="svActionIssue"><option value="">Genel işlem / bakım</option></select></label>
+            <label>Bileşen (varsa) <select id="svActionComponent"></select></label>
+            <label>İşlem türü <select id="svActionType"><option value="diagnosis">Kontrol / teşhis</option><option value="software">Yazılım işlemi</option><option value="repair">Onarım</option><option value="replacement">Parça değişimi</option><option value="adjustment">Ayar / kalibrasyon</option><option value="other">Diğer</option></select></label>
+            <label>İşlemi kim karşıladı? <select id="svActionCoverage"><option value="unknown">Henüz belli değil</option><option value="vehicle">Araç garantisi</option><option value="battery">Batarya garantisi</option><option value="extension">Ek teminat / servis paketi</option><option value="casco">Kasko</option><option value="traffic">Trafik sigortası</option><option value="goodwill">İyi niyet desteği</option><option value="paid">Ücretli</option></select></label>
+            <label>Teminat / poliçe kaydı <select id="svActionCoverageRef"><option value="">Kayıt seçilmedi</option></select></label>
+            <label>Karşılama kararı <select id="svActionDecision"><option value="unknown">Henüz belli değil</option><option value="requested">Talep edildi</option><option value="approved">Kabul edildi</option><option value="denied">Reddedildi</option><option value="not_applicable">Uygulanmadı</option></select></label>
+            <label class="span-2">İşlem açıklaması <textarea id="svActionDescription" maxlength="4000" rows="2" placeholder="Yapılan kontroller, parça değişimi, sonuç..."></textarea></label>
+            <label>Çıkarılan eski parça kodu <input id="svActionOldPart" maxlength="120" /></label>
+            <label>Takılan yeni parça kodu <input id="svActionNewPart" maxlength="120" /></label>
+            <label>İşlem bedeli (₺) <input id="svActionCost" type="number" min="0" step="0.01" placeholder="Bilinmiyorsa boş" /></label>
+            <label>Benim ödediğim (₺) <input id="svActionPaid" type="number" min="0" step="0.01" placeholder="Bilinmiyorsa boş" /></label>
+            <label class="span-2">İşlem belgesi (HTTPS) <input id="svActionDoc" type="url" placeholder="https://drive.google.com/..." /></label>
+            <label class="span-2">Ek not <textarea id="svActionNotes" maxlength="4000" rows="2"></textarea></label>
+          </div>
+          <p class="muted">Şirket/poliçe seçilmesi otomatik teminat onayı sayılmaz. Onay için “Karşılama kararı: Kabul edildi” seçin; ücretin kimce ödendiğini ayrıca kaydedin. Ziyaret maliyeti ve işlem maliyeti toplamı ayrı tutulur; toplamda iki kez sayılmaz.</p>
+          <div class="form-actions"><button type="submit">İşlemi Kaydet</button><button id="svActionClear" class="secondary" type="button">Temizle</button></div>
+          <p id="svActionFeedback" class="maintenance-feedback" role="status"></p>
+        </form>
+      </div>
+      <article class="card service-results">
+        <div class="card-head"><div><h2>Tekrarlayan arızalar ve değişimler</h2><p class="muted">Aynı bileşendeki bağımsız arıza vakaları ile parça değişim sayısı farklı göstergelerdir.</p></div><span class="badge neutral" id="serviceRecurringCount">0 tekrar</span></div>
+        <div id="serviceRepeatList" class="service-history" aria-live="polite"></div>
+      </article>
+      <article class="card service-results">
+        <div class="card-head"><h2>Servis geçmişim</h2><label class="service-filter">Göster <select id="serviceHistoryFilter"><option value="all">Tüm ziyaretler</option><option value="open">Planlanan / serviste</option><option value="closed">Tamamlanan</option></select></label></div>
+        <div id="serviceVisitHistory" class="service-history" aria-live="polite"></div>
+      </article>
+      <article class="card service-results"><div class="card-head"><h2>Arıza vakaları</h2><span id="serviceIssueCount" class="badge neutral">0 vaka</span></div><div id="serviceIssueHistory" class="service-history" aria-live="polite"></div></article>
+      <article class="card service-results"><div class="card-head"><h2>Yapılan işlemler ve parça değişimleri</h2><span id="serviceActionCount" class="badge neutral">0 işlem</span></div><div id="serviceActionHistory" class="service-history" aria-live="polite"></div></article>
+    </section>
 
     <section id="warranty" class="panel coverage-panel">
       <div class="section-title"><div><h2>Garanti & Ek Teminat Takibi</h2><p>Üretici garantilerini, ayrı kapsamlı ek garanti/servis paketlerini ve tarih–km sınırlarını takip edin.</p></div><button type="button" class="secondary" id="warrantyExportCsv">Garanti CSV İndir</button></div>
@@ -834,7 +929,7 @@
     </section>
   </main>
 
-  <footer>v0.12.0 · Garanti ve Poliçeler Yönetimi + Kolay Günlük Kayıt · Engineer Edition · Tek kullanıcı giriş kapısı · Firebase Sync · GitHub Pages · iPhone uyumlu · km/SOC eksik geçmiş kayıt desteği · süre→ortalama güç/C-rate</footer>
+  <footer>v0.13.0 · Servis ve Arıza Takibi Yönetimi + Kolay Günlük Kayıt · Engineer Edition · Tek kullanıcı giriş kapısı · Firebase Sync · GitHub Pages · iPhone uyumlu · km/SOC eksik geçmiş kayıt desteği · süre→ortalama güç/C-rate</footer>
   </div>
 
   <script src="weather.js"></script>
@@ -845,6 +940,7 @@
   <script src="seasonal-range.js"></script>
   <script src="maintenance-model.js"></script>
   <script src="coverage-model.js"></script>
+  <script src="service-model.js"></script>
   <script src="app.js"></script>
   <script type="module" src="firebase-sync.js"></script>
   <script>
