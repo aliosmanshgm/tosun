@@ -130,3 +130,15 @@ GitHub'a v0.9.6 dosyalarını yükledikten sonra önceki service worker önbelle
 4. Eski cihaz önbelleği kalırsa iPhone Safari/PWA'yı tamamen kapatıp yeniden açın. Güncel cache: `t10x-battery-v0.9.9-seasonal-range`.
 5. Yeni veriler eski Firebase nesnelerine opsiyonel `temp`, `tempSource`, `tempObservedAt` alanları olarak eklenir. Veri şeması **15** değişmez ve Firebase güvenlik kuralları aynı kalır.
 6. Konum izni yalnızca açıkça “Konumdan Sıcaklık Al” düğmesi seçilince istenir. Koordinatlar DB'ye yazılmaz. Dış hava sıcaklığı batarya sıcaklığı değildir.
+
+
+### v0.10.0 / Faz 1 yükseltmesi
+
+1. Mevcut sürümde **JSON Yedekle** ile geçmiş verileri dışarı alın.
+2. ZIP'in içindeki bütün uygulama dosyalarını GitHub deposunun **köküne** aktarın; `range-model.js`, `seasonal-range.js`, `app.js`, `app.css`, `index.html`, `sw.js` aynı sürüm olmalı.
+3. Mevcut Firebase oturum ve tek kullanıcı kuralları değiştirilmez. Uygulama veri modeli `schemaVersion:15`, yerel kayıt anahtarı `t10xBatteryTracker_v14` olarak korunur.
+4. Dashboard'da artık tek **Güncel Km + SOC Kaydet** düğmesi var. Eski sürüşler ve tüketimler yerinde kalır.
+5. Menzil güncelliğinin güvenilirliği, arada yapılan şarjların **Şarj Kayıtları**na tam ve doğru girilmesine bağlıdır.
+6. GitHub Pages güncellemesi sonrasında tarayıcıda eski ekran görünürse sekmeyi kapatıp yeniden açın veya sayfayı yeniden yükleyin (SW önbelleği sürümde değiştirildi).
+
+> Bu yükseltme bakım/garanti/servis fazlarını **eklemez**. Yeni günlük durum kaydı, geçmiş kilometre ve SOC verileriyle birikerek çalışır.

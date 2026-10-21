@@ -1,4 +1,4 @@
-/* v0.9.9 - Evidence-first summer/winter range analysis.
+/* v0.10.0 - Observation-aware summer/winter range analysis.
    Calendar seasons and measured ambient-temperature bands are separate views.
    SOH, usable pack capacity and ambient battery temperature are never inferred. */
 (function(root,factory){
@@ -25,6 +25,14 @@
   }
   function category(sample,view){
     if(view==='temperature'){
+      // A point-in-time weather reading cannot represent a week-long trip window.
+      if(sample.source==='observation'){
+        if(!(num(sample.windowHours)>0 && Number(sample.windowHours)<=24))return null;
+        const begin=num(sample.tempStart),finish=num(sample.tempEnd);
+        if(begin===null||finish===null)return null;
+        const band=t=>t<=10?'winter':t>=25?'summer':null;
+        if(!band(begin)||band(begin)!==band(finish))return null;
+      }
       const t=num(sample.temp);
       if(t===null||t< -50||t>60)return null;
       if(t<=10)return 'winter';
@@ -33,6 +41,12 @@
     }
     const d=localCalendarDate(sample.date);
     if(!d)return null;
+    if(sample.source==='observation' && sample.startAt){
+      const startDate=localCalendarDate(sample.startAt);
+      if(!startDate)return null;
+      const seasons=m=>[12,1,2].includes(m)?'winter':[6,7,8].includes(m)?'summer':null;
+      if(seasons(+startDate.slice(5,7))!==seasons(+d.slice(5,7)))return null;
+    }
     const month=+d.slice(5,7);
     if([12,1,2].includes(month))return 'winter';
     if([6,7,8].includes(month))return 'summer';
@@ -47,7 +61,7 @@
       return t<=end&&finish>=start;
     });
   }
-  function allObservations({driveSessions=[],trips=[],charges=[]}={}){
+  function allObservations({driveSessions=[],trips=[],charges=[],socSnapshots=[]}={}){
     const socDrives=R.observedDriveSegments(driveSessions,charges).map(x=>({
       ...x,kind:'soc',source:'drive',date:x.observedAt,temp:x.temp??null
     }));
@@ -55,9 +69,13 @@
       ...x,kind:'soc',source:'manual',date:x.observedAt,temp:x.temp??null
     }));
     // Do not double count a manual trip resembling an already tracked drive.
-    const soc=[...socDrives];
+    const socObserved=R.observedSnapshotSegments(socSnapshots,charges)
+      .filter(x=>!socDrives.some(d=>Number.isFinite(Date.parse(d.startAt||''))&&
+        Date.parse(d.startAt)<Date.parse(x.observedAt)&&Date.parse(x.startAt)<Date.parse(d.observedAt)))
+      .map(x=>({...x,kind:'soc',source:'observation',date:x.observedAt}));
+    const soc=[...socDrives,...socObserved];
     for(const m of socManual){
-      const duplicate=socDrives.some(d=>localCalendarDate(d.date)===localCalendarDate(m.date)&&
+      const duplicate=soc.some(d=>localCalendarDate(d.date)===localCalendarDate(m.date)&&
         Math.abs(d.km-m.km)<=Math.max(2,d.km*.02)&&Math.abs(d.drop-m.drop)<=2);
       if(!duplicate)soc.push(m);
     }
@@ -112,12 +130,13 @@
       consumptionCount:cons.length,consumptionKm:consKm,consumptionAverage:avgConsumption,consAdequate,
       avgTemp,temperatureRecordCount:temps.length,firstDate:dates[0]||null,lastDate:dates.at(-1)||null,
       capacityBasis:c!==null&&c>0?'user-usable':'nominal-assumption',
-      manualSocCount:soc.filter(x=>x.source==='manual').length
+      manualSocCount:soc.filter(x=>x.source==='manual').length,
+      observationSocCount:soc.filter(x=>x.source==='observation').length
     };
   }
-  function analyze({driveSessions=[],trips=[],charges=[],nominalCapacity=88.5,usableCapacity=null,view='calendar'}={}){
+  function analyze({driveSessions=[],trips=[],charges=[],socSnapshots=[],nominalCapacity=88.5,usableCapacity=null,view='calendar'}={}){
     const mode=view==='temperature'?'temperature':'calendar';
-    const samples=allObservations({driveSessions,trips,charges});
+    const samples=allObservations({driveSessions,trips,charges,socSnapshots});
     const opts={nominalCapacity,usableCapacity};
     const summer=summarize(samples,'summer',mode,opts),winter=summarize(samples,'winter',mode,opts);
     let method=null,summerRange=null,winterRange=null;
@@ -133,7 +152,7 @@
       differenceKm,differencePct,nominalAssumption:method==='consumption'&&summer.capacityBasis==='nominal-assumption'},
       classified:{soc:samples.soc.filter(x=>category(x,mode)!==null).length,consumption:samples.cons.filter(x=>category(x,mode)!==null).length},
       excluded:{soc:samples.soc.filter(x=>category(x,mode)===null).length,consumption:samples.cons.filter(x=>category(x,mode)===null).length},
-      note:mode==='calendar'?'Meteorolojik takvim: yaz Haziran–Ağustos, kış Aralık–Şubat. Mart–Mayıs ve Eylül–Kasım karşılaştırmaya girmez.':'Yalnızca sıcaklığı gerçekten kaydedilmiş sürüşler: soğuk ≤10°C, sıcak ≥25°C. 10–25°C arası ve bilinmeyen sıcaklıklar dışarıda kalır.'
+      note:mode==='calendar'?'Meteorolojik takvim: yaz Haziran–Ağustos, kış Aralık–Şubat. Mart–Mayıs ve Eylül–Kasım karşılaştırmaya girmez.':'Yalnızca sıcaklığı kayıtlı ölçümler: soğuk ≤10°C, sıcak ≥25°C. Gözlem aralığında iki uçta da aynı sıcaklık grubunun ölçülmüş olması ve aralığın ≤24 saat sürmesi gerekir. Dış hava batarya sıcaklığı değildir.'
     };
   }
   return {analyze,localCalendarDate,category,allObservations,summarize};

@@ -1,4 +1,4 @@
-# T10X Batarya & Şarj Takip v0.9.9 — Yaz/Kış Menzil Analizi
+# T10X Araç & Batarya Takip v0.10.0 — Faz 1: Kolay Günlük Kayıt
 
 Kişisel T10X (88,5 kWh NMC) kullanımı için local-first + Firebase senkronizasyonlu, iPhone/PWA uyumlu batarya ve şarj takip uygulaması.
 
@@ -205,3 +205,23 @@ v0.9.6 paketindeki **yeni `range-model.js`** dahil tüm dosyaları GitHub Pages 
 4. Karttaki değerler gerçek %100 menzil testi veya SOH ölçümü değildir. Rota/hız/klima/ısıtma/lastik vb. etkiler ayrıştırılmadığı için mevsimler arası fark nedensel bir batarya ölçümü sayılamaz.
 
 **Kurulum:** v0.9.9 ZIP içindeki bütün uygulama dosyalarını (`seasonal-range.js` dahil) GitHub Pages kök dizinine yükleyin. Öncesinde JSON yedeği alın. `database.rules.json` güncellemesi gerekmez.
+
+
+## v0.10.0 — Faz 1: Sürüş kaydı sadeleştirme (21 Ekim 2026)
+
+- Günlük kullanım: Dashboard > **Araç Durumunu Güncelle** > km, SOC > **Güncel Km + SOC Kaydet**. Sürüş başlangıcı/bitişi zorunlu değil.
+- Eski `Sürüşe Başla / Sürüşü Bitirdim` araçları açılır **İsteğe bağlı ayrıntılı sürüş kaydı** bölümünde kaldı; önceki `driveSessions` ve bağlı ayrıntılı `trips` korunur.
+- Yeni menzil motoru `socSnapshots` içindeki normal `observation` kayıtlarını kronolojik toplar. Art arda küçük düşüşleri yeterli SOC/km elde edilene dek birleştirir; tamamlanan aralıklar çifte sayılmaz. Minimum 30 km ve 8 SOC puanı, 100–1.000 km makul menzil koşulu geçerlidir.
+- İki günlük gözlem arasında **şarj oturumu kaydedilmişse** aralık dışlanır; 7 günü aşan iki ölçüm arası boşluklar da kullanılmaz. 14 günü aşan birikmiş aralık dışlanır. **Kaydedilmemiş şarjı saptayamaz**; şarjların tamamını girmek gerekir.
+- Başlangıcı ve bitişi aynı mevsimde olmayan gözlem aralıkları mevsimsel karşılaştırmaya katılmaz. **Sıcak/soğuk** görünümünde gözlem aralıklarının iki ucunda da dış hava sıcaklığı bulunması, her ikisinin aynı sıcaklık sınıfında olması ve sürenin en fazla 24 saat olması gerekir.
+- Günlük kayıt formunda isteğe bağlı dış hava sıcaklığı/konumdan anlık hava okuma var; yalnız sıcaklık ve veri kaynağı saklanır, koordinat saklanmaz.
+- SOC×zaman hesabında günlük farklı km gözlemleri **sürüş süresi veya park süresi olarak varsayılmaz**; eski doğrulanmış sürüş/şarj ve aynı kilometrede park gözlemleri hesaplanmaya devam eder.
+- Veri şeması v15 / localStorage anahtarı v14 korunur. Yeni Firebase kuralları, OAuth yapılandırması veya JSON dönüştürme işlemi gerekmez.
+- İleri fazlar (bakım, garanti, servis) **henüz bu sürüme dahil değildir**.
+
+### Kullanım notu
+
+1. Gün sonunda km ve SOC girin. İster günlük ister 2–3 günde bir kayıt yapabilirsiniz.
+2. AC/DC şarj ettiyseniz Şarj Kayıtları bölümüne mutlaka kaydedin, aksi halde gözlem aralığının şarjsız olduğu doğrulanamaz.
+3. Aynı menzil hesabına bağlı tüketim sayacı girişi isteğe bağlıdır.
+4. Eski sürüş geçmişi silinmemeli; yeni kayıtları zorunlu manuel sürüş gibi oluşturmanız gerekmez.

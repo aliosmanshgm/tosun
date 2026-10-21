@@ -9,7 +9,7 @@
   <meta name="apple-mobile-web-app-title" content="T10X Batarya" />
   <meta name="mobile-web-app-capable" content="yes" />
   <link rel="manifest" href="manifest.webmanifest" />
-  <title>T10X Batarya & Şarj Takip v0.9.9 · Yaz/Kış Menzil</title>
+  <title>T10X Araç & Batarya Takip v0.10.0 · Kolay Günlük Kayıt</title>
   <link rel="stylesheet" href="app.css" />
 </head>
 <body>
@@ -18,7 +18,7 @@
       <div class="auth-brand">
         <span class="auth-icon">T10X</span>
         <div>
-          <h1>Batarya & Şarj Takip</h1>
+          <h1>Araç & Batarya Takip</h1>
           <p>Kişisel kullanım · Firebase ile güvenli senkronizasyon</p>
         </div>
       </div>
@@ -35,7 +35,7 @@
   <div id="appShell" hidden>
   <header class="topbar">
     <div>
-      <h1>T10X Batarya & Şarj Takip</h1>
+      <h1>T10X Araç & Batarya Takip</h1>
       <p>NMC odaklı karar desteği · SOH · SOC×zaman · C-rate · termal bağlam · dinamik şarj planlama</p>
     </div>
     <div class="top-actions">
@@ -86,22 +86,26 @@
           </details>
         </article>
         <article class="card quick-entry-card">
-          <div class="card-head"><h2>Güncel Araç Durumu</h2></div>
+          <div class="card-head"><h2>Araç Durumunu Güncelle</h2></div>
           <form id="quickStatusForm" class="quick-status-form drive-quick-form">
             <label>Kilometre<input id="quickCurrentOdo" type="number" min="0" step="1" inputmode="numeric" required></label>
             <label>SOC (%)<input id="quickCurrentSoc" type="number" min="0" max="100" step="1" inputmode="numeric" required></label>
-            <label class="drive-optional">Bu sürüş ort. tüketimi (kWh/100 km) · isteğe bağlı<input id="quickDriveConsumption" type="number" min="0" max="100" step="0.1" inputmode="decimal" placeholder="Örn. 18,2 (sürüş bitişinde)"></label>
-            <label class="drive-optional">Sürüş bitişindeki dış hava sıcaklığı (°C) · isteğe bağlı<input id="quickDriveTemp" type="number" min="-50" max="60" step="0.1" inputmode="decimal" placeholder="Örn. 5,0"></label>
-            <div class="drive-weather-action"><button type="button" class="secondary" id="quickDriveWeatherBtn">Konumdan Sıcaklık Al</button><small id="quickDriveWeatherStatus">Yalnız sürüş sonu dış hava ölçümü. Batarya sıcaklığı değildir; koordinat kaydedilmez.</small></div>
+            <label class="drive-optional">Güncel dış hava sıcaklığı (°C) · isteğe bağlı<input id="quickDriveTemp" type="number" min="-50" max="60" step="0.1" inputmode="decimal" placeholder="Örn. 5,0"></label>
+            <div class="drive-weather-action"><button type="button" class="secondary" id="quickDriveWeatherBtn">Konumdan Sıcaklık Al</button><small id="quickDriveWeatherStatus">Kayıt anındaki dış hava sıcaklığıdır; batarya sıcaklığı değildir, konum saklanmaz.</small></div>
             <label class="drive-optional">Son şarjdan beri araç ortalaması (kWh/100 km) · isteğe bağlı<input id="quickSinceCharge" type="number" min="0" max="100" step="0.1" inputmode="decimal" placeholder="Örn. 18,0 (araç ekranından)"></label>
-            <div class="drive-actions">
-              <button type="button" class="secondary" id="quickDriveStartBtn">Sürüşe Başla</button>
-              <button type="button" id="quickDriveEndBtn">Sürüşü Bitirdim</button>
-              <button type="submit" class="secondary">Yalnızca Durumu Güncelle</button>
+            <div class="drive-actions simplified-actions">
+              <button type="submit" class="primary-status-save">Güncel Km + SOC Kaydet</button>
             </div>
+            <p id="quickSaveFeedback" class="quick-save-feedback" role="status" aria-live="polite"></p>
             <p id="driveStatusInfo" class="drive-status-info" aria-live="polite"></p>
-            <p class="muted drive-help">Son şarjdan beri ortalamayı biliyorsanız buraya girin; <strong>sahiplik dönemi toplam ortalamasını yazılım hesaplar</strong>. Bu sürüşün ortalaması ile son şarjdan beri sayacı farklı verilerdir.</p>
-            <p class="muted drive-help">Önerilen kullanım: Sürüşe başlarken bir kez <strong>Başla</strong>, park ettiğinizde <strong>Bitirdim</strong>. Yalnızca gün sonu kayıtları da kabul edilir; eksik aralıklar stres hesabına kesin bilgi gibi katılmaz.</p>
+            <p class="muted drive-help"><strong>Her sürüşe başlamanız gerekmiyor.</strong> Gün sonunda veya şarj öncesi/sonrasında km ve SOC'yi güncellemeniz yeterli. Sistem uygun iki kayıt arasındaki km/SOC değişiminden menzil tahmini yapar. Şarj yaptıysanız mutlaka Şarj Kayıtları'na ekleyin.</p>
+            <p class="muted drive-help">Son şarjdan beri tüketim değerini biliyorsanız girebilirsiniz; sahiplik dönemi ortalaması otomatik hesaplanır. Kayıt aralıklarından kesin sürüş süresi veya batarya sıcaklığı üretilmez.</p>
+            <details class="legacy-drive-tools">
+              <summary>İsteğe bağlı ayrıntılı sürüş kaydı (eski yöntem)</summary>
+              <p class="muted">Bu bölüm eski sürüş kayıtlarınıza uyumluluk için tutulur. Günlük kullanım için gerekli değildir.</p>
+              <label class="drive-optional">Sürüş ortalama tüketimi (kWh/100 km)<input id="quickDriveConsumption" type="number" min="0" max="100" step="0.1" inputmode="decimal" placeholder="Örn. 18,2"></label>
+              <div class="drive-actions"><button type="button" class="secondary" id="quickDriveStartBtn">Sürüşe Başla (isteğe bağlı)</button><button type="button" id="quickDriveEndBtn">Sürüşü Bitirdim</button></div>
+            </details>
           </form>
         </article>
       </div>
@@ -677,7 +681,7 @@
     </section>
   </main>
 
-  <footer>v0.9.9 · Yaz/Kış Menzil · Engineer Edition · Tek kullanıcı giriş kapısı · Firebase Sync · GitHub Pages · iPhone uyumlu · km/SOC eksik geçmiş kayıt desteği · süre→ortalama güç/C-rate</footer>
+  <footer>v0.10.0 · Kolay Günlük Kayıt + Mevsimsel Menzil · Engineer Edition · Tek kullanıcı giriş kapısı · Firebase Sync · GitHub Pages · iPhone uyumlu · km/SOC eksik geçmiş kayıt desteği · süre→ortalama güç/C-rate</footer>
   </div>
 
   <script src="weather.js"></script>

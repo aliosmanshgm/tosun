@@ -580,3 +580,14 @@ input[type="time"]::-webkit-datetime-edit{
 .drive-weather-action small{font-size:11px;line-height:1.55;flex:1 1 160px;color:var(--muted)}
 @media(max-width:700px){.seasonal-dashboard-card{margin-bottom:13px}.season-grid{gap:9px}.season-item{padding:12px;border-radius:15px}.season-km{font-size:clamp(23px,6vw,31px)}.season-top{font-size:13px}.season-sub{font-size:10.5px}}
 @media(max-width:350px){.season-grid{grid-template-columns:1fr}.season-km{font-size:32px}}
+
+/* v0.10.0 - daily one-action observation flow. Old manual recording is optional. */
+.quick-entry-card .drive-actions.simplified-actions{display:flex;gap:10px;margin-top:10px}
+.quick-entry-card .primary-status-save{width:100%;min-height:48px;font-weight:750}
+.quick-entry-card .legacy-drive-tools{grid-column:1/-1;width:100%;min-width:0;margin-top:12px;padding:12px;border:1px solid var(--border, #dbe2eb);border-radius:13px}
+.quick-entry-card .legacy-drive-tools summary{cursor:pointer;font-weight:650}
+.quick-entry-card .legacy-drive-tools .drive-optional{display:block;margin:12px 0}
+.quick-entry-card .legacy-drive-tools .drive-actions{display:flex;gap:8px;flex-wrap:wrap}
+@media(max-width:600px){.quick-entry-card .primary-status-save{min-height:52px}.quick-entry-card .legacy-drive-tools .drive-actions button{flex:1 1 170px}}
+
+.quick-entry-card .quick-save-feedback{grid-column:1/-1;color:#147d54;font-size:12px;font-weight:650;min-height:16px;margin:0}

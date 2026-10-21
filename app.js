@@ -628,12 +628,13 @@ function renderDashboard(){
   // All charge sessions are passed to exclude charging within a drive interval.
   const recentRange=rangePeriodView==='recent';
   const relevantDrives=recentRange?db.driveSessions.filter(x=>isInLastDays(x.endAt,90)):db.driveSessions;
+  const relevantObservations=recentRange?db.socSnapshots.filter(x=>isInLastDays(x.date,90)):db.socSnapshots;
   const relevantTrips=recentRange?db.trips.filter(x=>isInLastDays(x.date,90)):db.trips;
   const relevantConsumption=recentRange?null:cost100.calculated;
   const relevantSnapshot=recentRange?(cons&&isInLastDays(cons.date,90)?cons:null):cons;
   // 523 km WLTP is an official reference, NOT a battery SOH yardstick.
   const range=window.T10XRange.estimate({
-    driveSessions:relevantDrives,trips:relevantTrips,charges:ownerCharges(),
+    driveSessions:relevantDrives,trips:relevantTrips,socSnapshots:relevantObservations,charges:ownerCharges(),
     currentSoc:db.settings.currentSoc,reserveSoc:db.settings.plannerReserveSoc,
     nominalCapacity:db.settings.referenceCapacity,
     usableCapacity:db.settings.batteryUsableCapacity,
@@ -644,20 +645,20 @@ function renderDashboard(){
   const pct=range.wltpDifference;
   const difference=pct==null?'—':`${pct>0?'+':''}${fmt(pct,1)}%`;
   const progress=pct==null?0:Math.max(0,Math.min(100,range.fullRange/range.wltpRangeKm*100));
-  const methodTitle=range.method==='combined'?'SOC/km + tüketim uzlaşımı':range.method==='tracked-drive'?'Sürüş km/SOC ölçümleri':range.method==='manual-trip'?'Yolculuk km/SOC ölçümleri':range.method==='consumption-nominal'?'Nominal kapasiteyle kaba tahmin':range.method==='consumption-usable'?'Kullanılabilir kapasite senaryosu':'Hesap için kayıt eksik';
+  const methodTitle=range.method==='combined'?'SOC/km + tüketim uzlaşımı':range.method==='observed-interval'?'Günlük km/SOC gözlemleri':range.method==='tracked-drive'?'Sürüş km/SOC ölçümleri':range.method==='manual-trip'?'Yolculuk km/SOC ölçümleri':range.method==='consumption-nominal'?'Nominal kapasiteyle kaba tahmin':range.method==='consumption-usable'?'Kullanılabilir kapasite senaryosu':'Hesap için kayıt eksik';
   const rangeBox=byId('rangeDashboard');
   const socPct=range.currentSoc;
   const socMeterValue=socPct===null?0:Math.max(0,Math.min(100,socPct));
   const socClass=socPct===null?'unknown':socPct<20?'low':socPct>80?'high':'normal';
-  const methodBadge=range.disagreement?'Tahminler uyuşmuyor':range.method==='combined'?'Birleşik senaryo':range.method==='none'?'Veri gerekiyor':range.method==='tracked-drive'||range.method==='manual-trip'?'SOC/km yöntemi':'Tüketim yöntemi';
+  const methodBadge=range.disagreement?'Tahminler uyuşmuyor':range.method==='combined'?'Birleşik senaryo':range.method==='none'?'Veri gerekiyor':range.method==='tracked-drive'||range.method==='manual-trip'||range.method==='observed-interval'?'SOC/km yöntemi':'Tüketim yöntemi';
   const rangeMostRecent=range.sample?.latestAt?fmtDate(range.sample.latestAt):null;
-  const methodologyLabel=range.method==='combined'?'SOC/km ve tüketim tahminlerinin ağırlıklı uzlaşımı':range.method==='tracked-drive'||range.method==='manual-trip'?'Kayıtlı sürüşlerde kilometre ve SOC değişimi':range.method==='none'?'Geçerli ölçüm/kayıt henüz yok':'Tüketim ve kapasite varsayımına dayanan hesap';
+  const methodologyLabel=range.method==='combined'?'SOC/km ve tüketim tahminlerinin ağırlıklı uzlaşımı':range.method==='observed-interval'?'Günlük kayıtlar arasında kilometre ve SOC değişimi (tek sürüş değil)':range.method==='tracked-drive'||range.method==='manual-trip'?'Kayıtlı sürüşlerde kilometre ve SOC değişimi':range.method==='none'?'Geçerli ölçüm/kayıt henüz yok':'Tüketim ve kapasite varsayımına dayanan hesap';
   rangeBox.innerHTML=`<div class="card-head range-title-head"><div><span class="cockpit-eyebrow">KİŞİSEL MENZİL ANALİZİ</span><h2>Kullanımıma Göre Tahmini Menzil</h2></div><span class="badge ${range.disagreement?'warn':'neutral'}">${escapeHtml(methodBadge)}</span></div>
     <div class="range-period-selector" role="group" aria-label="Menzil hesaplama dönemi">
       <button type="button" data-range-period="all" class="range-period-btn ${!recentRange?'active':''}" aria-pressed="${!recentRange}">Tüm kayıtlar</button>
       <button type="button" data-range-period="recent" class="range-period-btn ${recentRange?'active':''}" aria-pressed="${recentRange}">Son 90 gün</button>
     </div>
-    <p class="range-period-explain">${recentRange?'Yalnızca son 90 gündeki tarihli yolculuklar ve güncel tüketim sayacı kullanılır. Eski sahiplik ortalaması bu döneme aktarılmaz.':'Tüm uygun kayıtlar kullanılır; yaz ve kış koşulları aynı ortalamaya karışabilir.'}</p>
+    <p class="range-period-explain">${recentRange?'Yalnızca son 90 gündeki zamanlı km/SOC gözlemleri, sürüşler ve güncel tüketim sayacı kullanılır. Eski sahiplik ortalaması bu döneme aktarılmaz.':'Tüm uygun kayıtlar kullanılır; yaz ve kış koşulları aynı ortalamaya karışabilir.'}</p>
     <div class="range-overview">
       <div class="range-primary"><span>%100 SOC eşdeğeri · tahmini</span><strong>${asKm(range.fullRange)}</strong><small>${escapeHtml(methodTitle)}</small></div>
       <div class="range-metrics">
@@ -666,26 +667,26 @@ function renderDashboard(){
       </div>
     </div>
     <div class="range-method-compare">
-      <div><span>Km + SOC gözlemi</span><strong>${asKm(range.socRange)}</strong><small>${range.socEvidence?escapeHtml(range.socEvidence):'Uygun sürüş kaydı bekleniyor'}</small></div>
+      <div><span>Km + SOC gözlemi</span><strong>${asKm(range.socRange)}</strong><small>${range.socEvidence?escapeHtml(range.socEvidence):'Km/SOC gözlem kaydı bekleniyor'}</small></div>
       <div><span>Tüketim + kapasite</span><strong>${asKm(range.consumptionRange)}</strong><small>${range.consumptionEvidence?escapeHtml(range.consumptionEvidence):'Ortalama tüketim kaydı bekleniyor'}</small></div>
     </div>
     <div class="range-benchmark"><div class="range-benchmark-label"><span>WLTP referansı: <strong>${range.wltpRangeKm!=null?fmt(range.wltpRangeKm,0)+' km':'—'}</strong></span><strong>${escapeHtml(difference)}</strong></div>
       <div class="range-track"><span style="width:${progress.toFixed(1)}%"></span></div></div>
     <div class="range-evidence-note"><strong>Hesaplama dayanağı:</strong> ${escapeHtml(methodologyLabel)}<br><strong>Veri kapsamı:</strong> ${escapeHtml(range.evidenceGrade)}${rangeMostRecent?' · Son uygun sürüş: '+escapeHtml(rangeMostRecent):''}${range.disagreement?' · tahminler arasında belirgin fark var':''}</div>
-    ${recentRange&&range.method==='none'?'<p class="range-missing">Son 90 güne ait yeterli sürüş/SOC veya tüketim verisi yok. Tüm Kayıtlar seçeneğini kullanabilir ya da yeni sürüş kaydedebilirsiniz.</p>':''}
+    ${recentRange&&range.method==='none'?'<p class="range-missing">Son 90 güne ait yeterli km/SOC gözlemi veya tüketim verisi yok. Tüm Kayıtlar seçeneğini kullanabilir ya da yeni sürüş kaydedebilirsiniz.</p>':''}
     <p class="muted">${escapeHtml(range.note)}</p>
     <details class="range-details"><summary>Yöntem, veri kapsamı ve sınırlamalar</summary>
-      <p><strong>Km/SOC:</strong> Şarj yapılmamış kayıtlarda km × 100 / SOC puan düşüşü. ${escapeHtml(range.socEvidence||'Yeterli örnek yok')}.</p>
+      <p><strong>Km/SOC:</strong> Günlük durum kayıtlarının arasındaki gözlem pencerelerinde (veya eski sürüş kayıtlarında), kayıtlı şarj bulunmuyorsa km × 100 / SOC puan düşüşü. ${escapeHtml(range.socEvidence||'Yeterli örnek yok')}.</p>
       <p><strong>Tüketim:</strong> 100 × kapasite kWh / tüketim kWh/100 km. ${escapeHtml(range.consumptionEvidence||'Hesaplanamıyor')}.</p>
       <p><strong>Birleşik senaryo:</strong> İki tahmin birbirinden en fazla %25 ayrılıyorsa, SOC/km verisine daha yüksek ağırlık verilir. Bu sonuç iki bağımsız ölçümün doğrulaması değildir; aynı sürüş verileri iki hesapta da yer alabilir. Fark %25’i aşarsa SOC/km tahmini ayrı gösterilir ve uyuşmazlık belirtilir.</p>
-      <p><strong>Son 90 gün görünümü:</strong> Tarihli sürüşler ve son şarjdan beri tüketim sayacı dikkate alınır. Ömür boyu enerji dengesi veya tarih atanmamış eski yolculuklar bu döneme dahil edilmez. Dönemler arasında yalnızca farklı örneklemler karşılaştırılır.</p>
+      <p><strong>Son 90 gün görünümü:</strong> Tarihli km/SOC gözlemleri, sürüşler ve son şarjdan beri tüketim sayacı dikkate alınır. Ömür boyu enerji dengesi veya tarih atanmamış eski yolculuklar bu döneme dahil edilmez. Dönemler arasında yalnızca farklı örneklemler karşılaştırılır.</p>
       <p><strong>Güncel rezerv:</strong> %100 eşdeğeri × (güncel SOC − seçilen rezerv)/100. %20–80 bandı %60'ıdır. Bu menzil güvenli erişim garantisi değildir. Gelecekteki sıcaklık, hız, eğim, klima ve beklenmedik tüketim sonucu değiştirebilir.</p>
       <p><strong>WLTP karşılaştırması:</strong> 523 km, standart test çevriminin referansıdır. Yüzde farkı bataryanın SOH/kaybı anlamına gelmez. Araçtan canlı OBD verisi veya kullanılabilir kapasite otomatik alınmaz.</p>
     </details>`;
 
   // v0.9.9: calendar seasons and actual ambient-temperature bands remain distinct.
   const seasonal=window.T10XSeasonalRange.analyze({
-    driveSessions:db.driveSessions,trips:db.trips,charges:ownerCharges(),
+    driveSessions:db.driveSessions,trips:db.trips,socSnapshots:db.socSnapshots,charges:ownerCharges(),
     nominalCapacity:db.settings.referenceCapacity,usableCapacity:db.settings.batteryUsableCapacity,
     view:seasonalRangeView
   });
@@ -697,20 +698,20 @@ function renderDashboard(){
     const enough=x.primary==='soc'?x.socAdequate:x.consAdequate;
     const status=x.range==null?'Veri bekleniyor':enough?'Kıyaslanabilir örnek':'Ön gözlem · az veri';
     const stats=[];
-    if(x.socCount)stats.push(`${x.socCount} SOC/km sürüşü · ${fmt(x.socKm,0)} km · %${fmt(x.socDrop,0)} SOC`);
+    if(x.socCount)stats.push(`${x.socCount} SOC/km aralığı · ${fmt(x.socKm,0)} km · %${fmt(x.socDrop,0)} SOC`);
     if(x.consumptionCount)stats.push(`${x.consumptionCount} tüketim kaydı · ${fmt(x.consumptionKm,0)} km · ${fmt(x.consumptionAverage,1)} kWh/100 km`);
     const t=x.avgTemp!=null?`Dış hava: ort. ${fmt(x.avgTemp,1)}°C · ${x.temperatureRecordCount} veri`:'Dış hava sıcaklığı: kayıt yok';
     return `<div class="season-item ${group}"><div class="season-top"><span>${emoji} ${label}</span><span class="season-status">${escapeHtml(status)}</span></div>
       <strong class="season-km">${rangeValue}</strong><span class="season-basis">${escapeHtml(basis)}</span>
-      <div class="season-sub">${stats.length?stats.map(z=>escapeHtml(z)).join('<br>'):'Kayıtlı ve uygun sürüş henüz yok.'}<br>${escapeHtml(t)}</div></div>`;
+      <div class="season-sub">${stats.length?stats.map(z=>escapeHtml(z)).join('<br>'):'Kayıtlı ve uygun gözlem henüz yok.'}<br>${escapeHtml(t)}</div></div>`;
   };
   const sComp=seasonal.comparison;
   const sDelta=sComp.ready?`<strong>${sComp.differenceKm>=0?'+':'−'}${fmt(Math.abs(sComp.differenceKm),0)} km</strong>
     <span>Yaz / sıcak koşul − kış / soğuk koşul · Yaz değerine göre ${sComp.differencePct>=0?'+':'−'}%${fmt(Math.abs(sComp.differencePct),1)}</span>`:
     '<strong>Henüz karşılaştırılamıyor</strong><span>Her iki grupta da aynı yöntemle yeterli örnek gerekli.</span>';
-  const sSummary=sComp.ready?(sComp.method==='soc'?'Yalnızca km/SOC sürüşlerinin karşılaştırması. %100 SOC eşdeğeri, gerçek tam şarj testi değildir.':
+  const sSummary=sComp.ready?(sComp.method==='soc'?'Yalnızca km/SOC gözlem aralıklarının karşılaştırması. %100 SOC eşdeğeri, gerçek tam şarj testi değildir.':
     `Tüketim üzerinden karşılaştırma. ${sComp.nominalAssumption?'88,5 kWh nominal kapasite yalnızca kaba mutlak menzil varsayımıdır; bağıl tüketim farkı kapasiteden bağımsızdır.':'Girilen kullanılabilir kapasiteye bağlıdır.'}`):
-    'Fark hesaplamak için her grupta en az 2 sürüş ve ≥100 km gerekir. SOC yöntemi için ayrıca toplam ≥20 SOC puanlık düşüş gerekir. Karışık yöntemlerle fark hesaplanmaz.';
+    'Fark hesaplamak için her grupta en az 2 uygun gözlem aralığı veya sürüş ve ≥100 km gerekir. SOC yöntemi için ayrıca toplam ≥20 SOC puanlık düşüş gerekir. Karışık yöntemlerle fark hesaplanmaz.';
   byId('seasonalRangeDashboard').innerHTML=`<div class="card-head range-title-head"><div><span class="cockpit-eyebrow">KİŞİSEL SÜRÜŞ KAYITLARI</span><h2>Yaz / Kış Menzil Analizi</h2></div><span class="badge neutral">${seasonal.view==='calendar'?'Takvim':'Gerçek sıcaklık'}</span></div>
     <div class="season-controls" role="group" aria-label="Mevsimsel analiz yöntemi">
       <button type="button" data-season-view="calendar" class="season-switch ${seasonalRangeView==='calendar'?'active':''}" aria-pressed="${seasonalRangeView==='calendar'}">Yaz / Kış</button>
@@ -721,9 +722,9 @@ function renderDashboard(){
     <div class="season-difference"><span>Karşılaştırma sonucu</span>${sDelta}</div>
     <p class="season-note">${escapeHtml(sSummary)}</p>
     <details class="range-details"><summary>Hangi kayıtlar kullanılır? Bilimsel sınırlar</summary>
-      <p>Dashboard'daki <strong>Sürüşe Başla / Sürüşü Bitirdim</strong> kayıtları ve elle girilmiş, mükerrer olmayan sürüşler kullanılır. Şarjın araya girdiği zaman damgalı sürüşler SOC/km hesabından çıkarılır; ≥30 km, ≥8 SOC puanı ve makul menzil kontrolü uygulanır.</p>
+      <p>Dashboard'daki ardışık <strong>Km + SOC</strong> gözlemleri, eski manuel sürüşler ve mükerrer olmayan ayrıntılı kayıtlar kullanılır. Araya kayıtlı şarj giren gözlem pencereleri SOC/km hesabından çıkarılır; <strong>kaydedilmemiş şarjlar otomatik tespit edilemez</strong>. ≥30 km, ≥8 SOC puanı ve makul menzil kontrolü uygulanır.</p>
       <p>Sürüş başına kaydedilmiş tüketim (kWh/100 km) varsa ayrı değerlendirilir. Yalnızca son şarjdan beri sayaç kaydı, tarihli bir sürüşün enerji tüketimi sanılmaz. Tüketimden mutlak menzil hesaplamak için kullanılabilir kapasite gerekir; yalnız nominal 88,5 kWh varsa kaba senaryo gösterilir.</p>
-      <p>Takvim görünümü mevsimi tarihten belirler. Sıcaklık görünümü yalnızca sürüş için kaydedilmiş <strong>dış hava</strong> sıcaklığını kullanır; eksik sıcaklık otomatik doldurulmaz ve dış hava batarya sıcaklığı değildir.</p>
+      <p>Takvim görünümü mevsimi tarihten belirler. Gözlem aralıklarının başlangıcı ve bitişi aynı mevsim grubunda değilse elenir. Sıcaklık görünümünde yalnızca kaydedilmiş <strong>dış hava</strong> sıcaklığı kullanılır; durum gözlem aralıklarında iki uçta da aynı sıcak/soğuk grubu ve en fazla 24 saat gerekir; eksik sıcaklık otomatik doldurulmaz ve dış hava batarya sıcaklığı değildir.</p>
       <p>Fark hız, yol eğimi, klima, lastik, rüzgar ve rota değişiminden de kaynaklanabilir; batarya SOH kaybı olarak yorumlanamaz. Sürüş/SOC ve tüketim aynı yolculuğa ait olabileceğinden iki yöntem bağımsız doğrulama değildir.</p>
     </details>`;
 
@@ -783,9 +784,11 @@ function renderDashboard(){
   if(document.activeElement!==D.quickCurrentOdo)D.quickCurrentOdo.value=db.settings.currentOdo??latestOdo()??'';
   if(document.activeElement!==D.quickCurrentSoc)D.quickCurrentSoc.value=db.settings.currentSoc??'';
   const ad=db.activeDrive;
+  const obsPoints=db.socSnapshots.filter(x=>(x.kind||'observation')==='observation').length;
+  const obsSegments=window.T10XRange.observedSnapshotSegments(db.socSnapshots,ownerCharges());
   byId('driveStatusInfo').innerHTML=ad
-    ?`<strong>Sürüş devam ediyor.</strong> Başlangıç: ${fmtDate(ad.startAt)} · ${fmt(ad.startOdo,0)} km · %${fmt(ad.startSoc,0)} SOC. Bitirirken güncel km/SOC girin.`
-    :'Sürüş başlamadı. İsterseniz sadece <strong>“Sürüşü Bitirdim”</strong> ile park başlangıcını işaretleyebilirsiniz; başlangıç bilinmiyorsa yolculuk süresi hesaplanmaz.';
+    ?`<strong>Eski yöntemden açık sürüş kaydı var.</strong> ${fmtDate(ad.startAt)} tarihinde başlamış. İsterseniz “Ayrıntılı sürüş” bölümünden tamamlayın; günlük kayıt için gerekli değil.`
+    :`<strong>${obsPoints} durum gözlemi · ${obsSegments.length} uygun km/SOC aralığı.</strong> ${obsSegments.length?'Tahmini menzil bu gözlemlerle güncellenebilir.':'Yeterli SOC düşüşü ve mesafe biriktikçe menzil hesabına katılacak.'} İki gözlem arasındaki sürüş/park saatleri bilinmiyor.`;
   D.quickDriveStartBtn.disabled=!!ad;
   D.quickDriveEndBtn.textContent=ad?'Sürüşü Bitirdim':'Sürüşü Bitirdim (başlangıç yok)';
 
@@ -796,7 +799,7 @@ function renderDashboard(){
   byId('complianceSummary').innerHTML=c.length?`<div class="mini-list"><div class="mini-item"><span>SOC verisi olan oturum</span><strong>${socKnown.length}/${c.length}</strong></div><div class="mini-item"><span>Tam koruma bandında kalan</span><strong>${socKnown.length?`${full}/${socKnown.length} (${fmt(full/socKnown.length*100,0)}%)`:'—'}</strong></div><div class="mini-item"><span>%80 üstüne çıkan</span><strong>${socKnown.length?above:'—'}</strong></div><div class="mini-item"><span>%20 altından başlayan</span><strong>${socKnown.length?below:'—'}</strong></div><p class="muted">%20’ye düşmeyi beklemek veya her seferinde %80’e çıkmak gerekli değildir; bu yalnızca tercih edilen koruma bandıdır.</p></div>`:'<div class="empty">Analiz için şarj kaydı ekleyin.</div>';
 
   const exp=socExposureMetrics();
-  byId('socTimeDashboard').innerHTML=exp.coveredHours?`<div class="mini-list"><div class="mini-item"><span>Kayda dayalı park</span><strong>${fmt(exp.parkHours,1)} saat</strong></div><div class="mini-item"><span>Ortalama park SOC</span><strong>%${fmt(exp.avgSoc,1)}</strong></div><div class="mini-item"><span>Parkta >%80</span><strong>${fmt(exp.above80Hours,1)} saat</strong></div><div class="mini-item"><span>Parkta >%90</span><strong>${fmt(exp.above90Hours,1)} saat</strong></div><div class="mini-item"><span>Belirsiz / uzun boşluk</span><strong>${fmt(exp.unknownHours+exp.ignoredHours,1)} saat</strong></div></div><p class="muted">Güven: ${exp.confidence} · Zaman aralıklarının %${fmt(exp.knownShare,0)}'i sınıflanabildi. Devam eden park süresi teyit edilene kadar sayılmaz.</p>`:'<div class="empty">Kayda dayalı park aralığı henüz yok. Bir sürüş bitişi ve bir sonraki sürüş başlangıcı ya da aynı kilometrede iki SOC gözlemi oluşturun. Bilinmeyen süreler otomatik doldurulmaz.</div>';
+  byId('socTimeDashboard').innerHTML=exp.coveredHours?`<div class="mini-list"><div class="mini-item"><span>Kayda dayalı park</span><strong>${fmt(exp.parkHours,1)} saat</strong></div><div class="mini-item"><span>Ortalama park SOC</span><strong>%${fmt(exp.avgSoc,1)}</strong></div><div class="mini-item"><span>Parkta >%80</span><strong>${fmt(exp.above80Hours,1)} saat</strong></div><div class="mini-item"><span>Parkta >%90</span><strong>${fmt(exp.above90Hours,1)} saat</strong></div><div class="mini-item"><span>Belirsiz / uzun boşluk</span><strong>${fmt(exp.unknownHours+exp.ignoredHours,1)} saat</strong></div></div><p class="muted">Güven: ${exp.confidence} · Zaman aralıklarının %${fmt(exp.knownShare,0)}'i sınıflanabildi. Devam eden park süresi teyit edilene kadar sayılmaz.</p>`:'<div class="empty">Kayda dayalı park aralığı henüz yok. Aynı kilometrede iki SOC gözlemi oluşturulursa park süresi tahmin edilebilir; günlük km artışı sürüş/park saati olarak dağıtılmaz.</div>';
   const totalCons=calculated.average;
   byId('plannerDashboard').innerHTML=`<div class="mini-list"><div class="mini-item"><span>Güncel SOC</span><strong>%${fmt(db.settings.currentSoc,0)}</strong></div><div class="mini-item"><span>Referans tüketim</span><strong>${totalCons?fmt(totalCons,1)+' kWh/100 km':'—'}</strong></div><div class="mini-item"><span>Varsayılan rezerv</span><strong>%${fmt(db.settings.plannerReserveSoc??15,0)}</strong></div></div><p class="muted">Mesafe ve hareket saatini girerek ihtiyaç kadar hedef SOC ile en geç şarj başlangıç zamanını hesaplayın.</p>`;
 
@@ -1193,6 +1196,7 @@ function recordCurrent(odo,soc,kind='observation',extra={}){
   db.socSnapshots.push({id:uid(),date:now,odo,soc,kind,source:'quick',sourceLabel:{drive_start:'Sürüş başlangıcı',drive_end:'Sürüş bitişi',drive_end_unpaired:'Sürüş bitişi (başlangıç yok)'}[kind]||'Güncel araç durumu',...extra});
   return now;
 }
+function atTime(){return new Date().toISOString()}
 function captureQuickSinceCharge(odo,at){
   const raw=D.quickSinceCharge.value;
   if(raw==='')return true;
@@ -1206,7 +1210,21 @@ D.chargeLedgerComplete?.addEventListener('change',()=>{db.settings.chargingLedge
 D.quickStatusForm.addEventListener('submit',e=>{
   e.preventDefault();const v=quickReading();if(!v)return;
   if(db.activeDrive&&!confirm('Devam eden sürüş sırasında manuel durum kaydı, sürüş süresini parçalara ayırır. Devam edilsin mi?'))return;
-  const at=recordCurrent(v.odo,v.soc);captureQuickSinceCharge(v.odo,at);save();
+  const temp=D.quickDriveTemp.value===''?null:Number(D.quickDriveTemp.value);
+  if(temp!==null&&(!Number.isFinite(temp)||temp< -50||temp>60))return alert('Dış hava sıcaklığını kontrol edin.');
+  if(db.activeDrive){
+    if(!confirm('Eski yöntemden açık sürüşünüz var. Bu kaydı tamamlamadan kapatıp normal km/SOC gözlemi oluşturulsun mu? Eski başlangıç noktası silinmez.'))return;
+    db.activeDrive=null;
+  }
+  const at=recordCurrent(v.odo,v.soc,'observation',{
+    temp,tempSource:temp===null?null:(D.quickDriveTemp.dataset.source||'manual'),
+    tempObservedAt:temp===null?null:(D.quickDriveTemp.dataset.observedAt||atTime())
+  });
+  captureQuickSinceCharge(v.odo,at);
+  D.quickDriveTemp.value='';D.quickDriveTemp.dataset.source='manual';D.quickDriveTemp.dataset.observedAt='';
+  D.quickDriveWeatherStatus.textContent='Dış hava sıcaklığı isteğe bağlı; kayıt anındaki değer ve kaynağı saklanır.';
+  save();
+  byId('quickSaveFeedback').textContent=`Kaydedildi: ${fmt(v.odo,0)} km · %${fmt(v.soc,0)} SOC · ${fmtDate(at)}. Menzil ve analizler güncellendi.`;
 });
 D.quickDriveStartBtn.addEventListener('click',()=>{
   if(db.activeDrive)return alert('Devam eden sürüşü önce bitirin.');
@@ -1219,7 +1237,7 @@ D.quickDriveStartBtn.addEventListener('click',()=>{
 D.quickDriveTemp?.addEventListener('input',()=>{
   D.quickDriveTemp.dataset.source='manual';
   D.quickDriveTemp.dataset.observedAt='';
-  D.quickDriveWeatherStatus.textContent='Sürüş sonundaki manuel dış hava sıcaklığı. Batarya sıcaklığı değildir.';
+  D.quickDriveWeatherStatus.textContent='Kayıt anındaki manuel dış hava sıcaklığı. Batarya sıcaklığı değildir.';
 });
 D.quickDriveWeatherBtn?.addEventListener('click',async()=>{
   if(!window.T10XWeather)return alert('Hava servisi yüklenemedi.');
