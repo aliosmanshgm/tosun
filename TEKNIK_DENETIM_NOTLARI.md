@@ -124,3 +124,12 @@
 `node tests/maintenance-model.test.js`
 
 Ardından var olan diğer `tests/*.test.js` dosyalarıyla hesaplama regresyon testi çalıştırılabilir.
+
+### Faz 3: Garanti ve poliçe metodolojisi (v0.12.0)
+
+- İmalatçı garantileri: başlangıç tarihi ve `durationMonths` üzerinden tarih sınırı; `maxOdo` araç toplam kilometresindeki **mutlak üst sınır** olarak değerlendirilir. Erken dolan tarih/km koşulu statüyü bitirir. Başlangıç tarihi boşsa "bilgi eksik" gösterilir; varsayılan ilk tescil tarihi uydurulmaz.
+- Araç genel: varsayılan 36 ay / 100.000 km; HV batarya: 96 ay / 160.000 km. Bu değerler kayıtta değiştirilebilir. Ek teminatlar ayrı durumlardır, üretici garantisinin takvimini değiştirmez.
+- Poliçeler: her trafik/kasko sözleşmesi bağımsız dönem ve prim kaydıdır. Bitişten önceki `policyDays` eşiğinde uygulama içi uyarı çıkar. Gelecek dönem yenilemesi eski poliçeyi otomatik silmez.
+- Prim karşılaştırması nominal TL yüzdesidir. Enflasyon düzeltmesi, gerçek teminat kapsam eşitliği, hasar sonrası fiyat değişimi veya prim yeniden değerleme bu sürümde yapılmaz.
+- Firebase veri şeması v17; `coverage.warranties`, `coverage.extensions`, `coverage.policies`, `coverage.warnings`. Var olan şarj, tüketim, SOC, SOH, menzil, bakım ve geçmiş sürüş kayıtları migrate edilir. Firebase tek kullanıcı kuralları korunur.
+- Garanti/hasar kararları hukuki güvence veya poliçe kapsam teyidi yerine geçmez. Belge bağlantısı yalnız HTTPS; uygulama bu sürümde Drive dosyasının kendisini yüklemez. Yerel/hesap testleri canlı Firebase doğrulaması değildir.

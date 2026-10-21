@@ -6,10 +6,10 @@
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
   <meta name="theme-color" content="#101828" />
-  <meta name="apple-mobile-web-app-title" content="T10X Batarya" />
+  <meta name="apple-mobile-web-app-title" content="T10X Araç" />
   <meta name="mobile-web-app-capable" content="yes" />
   <link rel="manifest" href="manifest.webmanifest" />
-  <title>T10X Araç & Batarya Takip v0.11.0 · Periyodik Bakım</title>
+  <title>T10X Araç & Batarya Takip v0.12.0 · Garanti ve Poliçeler</title>
   <link rel="stylesheet" href="app.css" />
 </head>
 <body>
@@ -49,6 +49,8 @@
     <button class="tab active" data-tab="dashboard">Gösterge Paneli</button>
     <button class="tab" data-tab="charges">Şarj Kayıtları</button>
     <button class="tab" data-tab="maintenance">Periyodik Bakım</button>
+    <button class="tab" data-tab="warranty">Garantiler & Uzatmalar</button>
+    <button class="tab" data-tab="insurance">Sigorta & Kasko</button>
     <button class="tab" data-tab="trips">Tüketim / Sürüş</button>
     <button class="tab" data-tab="planner">Şarj Planlayıcı</button>
     <button class="tab" data-tab="soh">SOH Testleri</button>
@@ -77,6 +79,10 @@
         <div class="card-head"><div><span class="cockpit-eyebrow">ARAÇ TAKVİMİ</span><h2>Periyodik Bakım</h2></div><button type="button" class="secondary" id="goMaintenance" data-goto="maintenance">Bakımları yönet</button></div>
         <div id="maintenanceDashboardSummary" aria-live="polite"></div>
       </article>
+      <div class="grid two phase3-home-grid">
+        <article class="card coverage-dashboard-card"><div class="card-head"><h2>Araç & Batarya Garantileri</h2><button type="button" class="link-btn" data-goto="warranty">Yönet</button></div><div id="warrantyDashboard" aria-live="polite"></div></article>
+        <article class="card coverage-dashboard-card"><div class="card-head"><h2>Trafik Sigortası & Kasko</h2><button type="button" class="link-btn" data-goto="insurance">Poliçeleri aç</button></div><div id="insuranceDashboard" aria-live="polite"></div></article>
+      </div>
       <article class="card range-dashboard-card" id="rangeDashboard" aria-live="polite"></article>
       <article class="card seasonal-dashboard-card" id="seasonalRangeDashboard" aria-live="polite"></article>
       <div class="grid two">
@@ -240,6 +246,99 @@
         <div class="card-head"><div><h2>Bakım ve rutin işlem geçmişi</h2><p class="muted">İlk kurulumda eski bakım belgelerinizi de girebilirsiniz. Bir kayıt bir kez sayılır.</p></div><span class="badge neutral" id="maintenanceRecordCount">0 kayıt</span></div>
         <div id="maintenanceHistory" aria-live="polite"></div>
       </article>
+    </section>
+
+
+    <section id="warranty" class="panel coverage-panel">
+      <div class="section-title"><div><h2>Garanti & Ek Teminat Takibi</h2><p>Üretici garantilerini, ayrı kapsamlı ek garanti/servis paketlerini ve tarih–km sınırlarını takip edin.</p></div><button type="button" class="secondary" id="warrantyExportCsv">Garanti CSV İndir</button></div>
+      <div class="info-box"><strong>Önemli ayrım:</strong> 3 yıl / 100.000 km ve 8 yıl / 160.000 km varsayılan <em>üretici garantisi</em> sınırlarıdır; esas başlangıç ve şartları kendi garanti belgenizden girin. Ücretli uzatma veya kasko ek teminatı, üretici garantisinin otomatik uzaması değildir. Her kayıt kendi kapsamıyla değerlendirilir.</div>
+      <div id="warrantyOverview" class="grid two coverage-overview" aria-live="polite"></div>
+      <div class="grid two coverage-forms">
+        <form id="warrantyForm" class="form-card">
+          <h2>Üretici Garantisini Tanımla</h2>
+          <p class="muted">Araç ve batarya garantileri ayrı kaydedilir; tarih veya kilometreden <strong>ilk dolan</strong> sınır geçerlidir.</p>
+          <div class="form-grid maintenance-form-grid">
+            <label>Garanti türü <select id="warrantyType"><option value="vehicle">Araç genel garantisi</option><option value="battery">Yüksek voltaj bataryası</option></select></label>
+            <label>Garanti başlangıcı <input id="warrantyStartDate" type="date" required></label>
+            <label>Süre (ay) <input id="warrantyDuration" type="number" min="1" max="240" step="1" required></label>
+            <label>Toplam km sınırı <input id="warrantyMaxKm" type="number" min="1" max="2000000" step="1" required></label>
+            <label>Garanti sağlayıcısı <input id="warrantyProvider" maxlength="160" type="text" placeholder="Togg"></label>
+            <label>Garanti belgesi / referans no <input id="warrantyReference" maxlength="160" type="text"></label>
+            <label class="span-2">Belge bağlantısı (HTTPS) <input id="warrantyDocUrl" type="url" placeholder="https://drive.google.com/..."></label>
+            <label class="span-2">Kapsam/özel koşullar <textarea id="warrantyNotes" rows="2" maxlength="4000" placeholder="Garanti belgenizdeki önemli koşullar"></textarea></label>
+          </div>
+          <div class="form-actions"><button type="submit">Garanti Bilgilerini Kaydet</button></div>
+          <p id="warrantyFeedback" class="maintenance-feedback" role="status" aria-live="polite"></p>
+        </form>
+        <form id="extensionForm" class="form-card">
+          <h2 id="extensionFormTitle">Ek Garanti / Teminat / Paket</h2>
+          <input id="extensionId" type="hidden">
+          <div class="form-grid maintenance-form-grid">
+            <label>Ürün / kapsam türü <select id="extensionType"><option value="vehicle">Araç garanti uzatması</option><option value="battery">Batarya garanti uzatması</option><option value="other">Diğer ek teminat</option><option value="service_plan">Ücretli servis / koruma paketi</option><option value="casco_addon">Kasko ek teminatı</option></select></label>
+            <label>Sağlayıcı / kuruluş <input id="extensionProvider" type="text" maxlength="160" required></label>
+            <label>Başlangıç tarihi <input id="extensionStart" type="date" required></label>
+            <label>Bitiş tarihi <input id="extensionEnd" type="date"></label>
+            <label>Toplam km bitiş sınırı (varsa) <input id="extensionMaxKm" type="number" min="1" max="2000000" step="1" placeholder="Yoksa boş"></label>
+            <label>Ödenen tutar (₺) <input id="extensionPremium" type="number" min="0" step="0.01" placeholder="Bilinmiyorsa boş"></label>
+            <label class="span-2">Kapsam / dahil edilen parçalar <textarea id="extensionScope" rows="2" maxlength="4000" placeholder="Belgedeki kapsam, istisna ve koşullar"></textarea></label>
+            <label>Poliçe / sözleşme no <input id="extensionReference" type="text" maxlength="160"></label>
+            <label>Belge bağlantısı (HTTPS) <input id="extensionDocUrl" type="url" placeholder="https://..."></label>
+            <label class="span-2">Notlar <textarea id="extensionNotes" rows="2" maxlength="4000"></textarea></label>
+          </div>
+          <p class="muted">En az bir bitiş sınırı (tarih veya km) gerekli. Buradaki kayıtlar orijinal araç/batarya garanti limitlerini değiştirmez.</p>
+          <div class="form-actions"><button id="extensionSaveBtn" type="submit">Ek Teminatı Kaydet</button><button id="extensionClear" type="button" class="secondary">Temizle</button></div>
+          <p id="extensionFeedback" class="maintenance-feedback" role="status" aria-live="polite"></p>
+        </form>
+      </div>
+      <article class="card"><div class="card-head"><h2>Ek garanti ve teminat geçmişi</h2><span id="extensionCount" class="badge neutral">0 kayıt</span></div><div id="extensionHistory"></div></article>
+    </section>
+
+    <section id="insurance" class="panel coverage-panel">
+      <div class="section-title"><div><h2>Trafik Sigortası & Kasko</h2><p>İki poliçeyi bağımsız izleyin; eski poliçeleri saklayın, prim ve yenileme geçmişini karşılaştırın.</p></div><button type="button" class="secondary" id="insuranceExportCsv">Poliçe CSV İndir</button></div>
+      <div class="info-box">Zorunlu trafik sigortası, kasko, üretici garantisi ve garanti uzatması <strong>farklı kapsamlar</strong> taşır. Poliçe kaydınız bir hasarın/onarımın karşılanacağını garanti etmez. Teminatı kendi poliçe belgenize göre doğrulayın. <strong>Belgelerinizi herkese açık GitHub deposuna yüklemeyin.</strong></div>
+      <div class="grid two coverage-overview" id="insuranceOverview" aria-live="polite"></div>
+      <div class="grid two coverage-forms">
+        <form id="insuranceForm" class="form-card">
+          <h2 id="insuranceFormTitle">Yeni / Eski Poliçe Kaydı</h2>
+          <input id="insuranceId" type="hidden">
+          <div class="form-grid maintenance-form-grid">
+            <label>Poliçe türü <select id="insuranceType"><option value="traffic">Zorunlu trafik sigortası</option><option value="casco">Kasko</option></select></label>
+            <label>Sigorta şirketi <input id="insuranceCompany" type="text" maxlength="160" required placeholder="Örn. sigorta şirketi"></label>
+            <label>Poliçe numarası <input id="insuranceNumber" type="text" maxlength="160"></label>
+            <label>Acente / iletişim <input id="insuranceAgency" type="text" maxlength="250"></label>
+            <label>Başlangıç tarihi <input id="insuranceStart" type="date" required></label>
+            <label>Bitiş tarihi <input id="insuranceEnd" type="date" required></label>
+            <label>Toplam poliçe primi (₺) <input id="insurancePremium" type="number" min="0" step="0.01" required></label>
+            <label>Fiilen ödenen tutar (₺) <input id="insurancePaid" type="number" min="0" step="0.01" placeholder="Bilinmiyorsa boş"></label>
+            <label>Ödeme tarihi <input id="insurancePaymentDate" type="date"></label>
+            <label>Taksit sayısı <input id="insuranceInstallments" type="number" min="1" max="60" step="1" value="1" required></label>
+            <label>Hasarsızlık bilgisi <input id="insuranceNoClaim" type="text" maxlength="150" placeholder="Basamak / indirim"></label>
+            <label>Muafiyet bilgisi <input id="insuranceDeductible" type="text" maxlength="150" placeholder="Poliçede varsa"></label>
+            <label class="span-2">Teminat kapsamı / istisnalar <textarea id="insuranceScope" rows="2" maxlength="4000"></textarea></label>
+            <label class="span-2">Ek hizmetler / ikame araç / yol yardım <textarea id="insuranceBenefits" rows="2" maxlength="2500"></textarea></label>
+            <label class="span-2">Poliçe PDF bağlantısı (HTTPS) <input id="insuranceDocUrl" type="url" placeholder="https://drive.google.com/..."></label>
+            <label class="span-2">Notlar <textarea id="insuranceNotes" rows="2" maxlength="4000"></textarea></label>
+          </div>
+          <div class="form-actions"><button id="insuranceSaveBtn" type="submit">Poliçeyi Kaydet</button><button id="insuranceClear" type="button" class="secondary">Temizle</button></div>
+          <p id="insuranceFeedback" class="maintenance-feedback" role="status" aria-live="polite"></p>
+        </form>
+        <article class="card coverage-guidance-card">
+          <h2>Yenileme & Prim Geçmişi</h2>
+          <p class="muted">Her yenilemede yeni poliçe kaydedin. Eski kayıtlar korunur; geçmişe dönük prim değişimi <strong>nominal ₺</strong> olarak gösterilir (enflasyon düzeltmesi yapılmaz).</p>
+          <div id="insurancePremiumSummary"></div>
+          <hr>
+          <h3>Hatırlatma eşikleri</h3>
+          <p class="muted">Uyarılar uygulamayı açtığınızda görünür; arka planda mesaj/e-posta gönderilmez.</p>
+          <form id="coverageWarningsForm" class="form-grid maintenance-form-grid">
+            <label>Garanti bitişi (gün kala) <input type="number" id="coverageWarnDays" min="0" max="365" step="1" required></label>
+            <label>Garanti km kala <input type="number" id="coverageWarnKm" min="0" max="100000" step="100" required></label>
+            <label>Poliçe bitişi (gün kala) <input type="number" id="coverageWarnPolicy" min="0" max="365" step="1" required></label>
+            <div class="span-2 form-actions"><button type="submit">Uyarı Ayarlarını Kaydet</button></div>
+          </form>
+          <p id="coverageWarningsFeedback" class="maintenance-feedback" role="status" aria-live="polite"></p>
+        </article>
+      </div>
+      <article class="card"><div class="card-head"><h2>Poliçe geçmişi ve yenilemeler</h2><span id="insuranceCount" class="badge neutral">0 poliçe</span></div><div id="insuranceHistory"></div></article>
     </section>
 
     <section id="charges" class="panel">
@@ -735,7 +834,7 @@
     </section>
   </main>
 
-  <footer>v0.11.0 · Periyodik Bakım Yönetimi + Kolay Günlük Kayıt · Engineer Edition · Tek kullanıcı giriş kapısı · Firebase Sync · GitHub Pages · iPhone uyumlu · km/SOC eksik geçmiş kayıt desteği · süre→ortalama güç/C-rate</footer>
+  <footer>v0.12.0 · Garanti ve Poliçeler Yönetimi + Kolay Günlük Kayıt · Engineer Edition · Tek kullanıcı giriş kapısı · Firebase Sync · GitHub Pages · iPhone uyumlu · km/SOC eksik geçmiş kayıt desteği · süre→ortalama güç/C-rate</footer>
   </div>
 
   <script src="weather.js"></script>
@@ -745,6 +844,7 @@
   <script src="range-model.js"></script>
   <script src="seasonal-range.js"></script>
   <script src="maintenance-model.js"></script>
+  <script src="coverage-model.js"></script>
   <script src="app.js"></script>
   <script type="module" src="firebase-sync.js"></script>
   <script>

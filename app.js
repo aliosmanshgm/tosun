@@ -1,5 +1,5 @@
-const STORAGE_KEY='t10xBatteryTracker_v15';
-const LEGACY_KEYS=['t10xBatteryTracker_v14','t10xBatteryTracker_v13','t10xBatteryTracker_v12','t10xBatteryTracker_v11','t10xBatteryTracker_v10','t10xBatteryTracker_v9','t10xBatteryTracker_v8','t10xBatteryTracker_v6','t10xBatteryTracker_v5','t10xBatteryTracker_v4','t10xBatteryTracker_v3','t10xBatteryTracker_v2','t10xBatteryTracker_v1'];
+const STORAGE_KEY='t10xBatteryTracker_v16';
+const LEGACY_KEYS=['t10xBatteryTracker_v15','t10xBatteryTracker_v14','t10xBatteryTracker_v13','t10xBatteryTracker_v12','t10xBatteryTracker_v11','t10xBatteryTracker_v10','t10xBatteryTracker_v9','t10xBatteryTracker_v8','t10xBatteryTracker_v6','t10xBatteryTracker_v5','t10xBatteryTracker_v4','t10xBatteryTracker_v3','t10xBatteryTracker_v2','t10xBatteryTracker_v1'];
 const DEFAULT_PROVIDERS=[
   "ZES Şarj",
   "Trugo Şarj",
@@ -163,7 +163,7 @@ const DEFAULT_PROVIDERS=[
   "Ev / Kendi AC Şarjım"
 ];
 const defaults={
-  meta:{schemaVersion:16,updatedAt:''},
+  meta:{schemaVersion:17,updatedAt:''},
   settings:{
     vehicleName:'T10X Uzun Menzil',batteryChemistry:'NMC',ownershipStartOdo:32356,ownershipStartSoc:59,ownershipStartDate:'',trackingStartOdo:33537,currentOdo:33537,currentSoc:76,
     referenceCapacity:88.5,wltpRangeKm:523,preferredMinSoc:20,preferredMaxSoc:80,
@@ -171,7 +171,8 @@ const defaults={
   },
   providers:[...DEFAULT_PROVIDERS],
   charges:[],trips:[],consumptionSnapshots:[],sohTests:[],socSnapshots:[],driveSessions:[],activeDrive:null,
-  maintenance:{config:{...window.T10XMaintenance.DEFAULT_CONFIG},records:[]}
+  maintenance:{config:{...window.T10XMaintenance.DEFAULT_CONFIG},records:[]},
+  coverage:window.T10XCoverage.defaultData()
 };
 
 let db=load();
@@ -192,7 +193,7 @@ const D=Object.fromEntries(domIds.map(id=>[id,byId(id)]));
 
 function migrate(obj){
   const out={...structuredClone(defaults),...(obj||{})};
-  out.meta={...structuredClone(defaults.meta),...(obj?.meta||{}),schemaVersion:16};
+  out.meta={...structuredClone(defaults.meta),...(obj?.meta||{}),schemaVersion:17};
   out.settings={...structuredClone(defaults.settings),...(obj?.settings||{})};
   delete out.settings.targetDcShare;delete out.settings.balanceWindow;
   if(obj?.settings&&obj.settings.ownershipStartSoc==null){
@@ -208,6 +209,7 @@ function migrate(obj){
   out.socSnapshots=Array.isArray(obj?.socSnapshots)?obj.socSnapshots:[];
   out.driveSessions=Array.isArray(obj?.driveSessions)?obj.driveSessions:[];
   out.maintenance={config:window.T10XMaintenance.normalizeConfig(obj?.maintenance?.config||{}),records:Array.isArray(obj?.maintenance?.records)?obj.maintenance.records.map(x=>({...x})):[]};
+  out.coverage=window.T10XCoverage.normalize(obj?.coverage);
   out.activeDrive=(obj?.activeDrive&&Number.isFinite(new Date(obj.activeDrive.startAt).getTime()))?obj.activeDrive:null;
   return out;
 }
@@ -219,14 +221,14 @@ function load(){
   }catch{return structuredClone(defaults)}
 }
 function persistLocal({emit=false}={}){localStorage.setItem(STORAGE_KEY,JSON.stringify(db));renderAll();if(emit)window.dispatchEvent(new CustomEvent('t10x:data-changed',{detail:{db:structuredClone(db)}}));}
-function save(){db.meta={...(db.meta||{}),schemaVersion:16,updatedAt:new Date().toISOString()};persistLocal({emit:true})}
+function save(){db.meta={...(db.meta||{}),schemaVersion:17,updatedAt:new Date().toISOString()};persistLocal({emit:true})}
 
 window.T10XApp={
   getData:()=>structuredClone(db),
   replaceData:(next,{emit=false}={})=>{db=migrate(next||{});persistLocal({emit});return structuredClone(db)},
-  hasMeaningfulData:()=>Boolean(db.charges.length||db.trips.length||db.consumptionSnapshots.length||db.sohTests.length||db.socSnapshots.length||db.driveSessions.length||!!db.activeDrive||db.maintenance?.records?.length||db.maintenance?.config?.startDate||db.meta?.updatedAt),
+  hasMeaningfulData:()=>Boolean(db.charges.length||db.trips.length||db.consumptionSnapshots.length||db.sohTests.length||db.socSnapshots.length||db.driveSessions.length||!!db.activeDrive||db.maintenance?.records?.length||db.maintenance?.config?.startDate||db.coverage?.policies?.length||db.coverage?.extensions?.length||db.coverage?.warranties?.vehicle?.startDate||db.coverage?.warranties?.battery?.startDate||db.meta?.updatedAt),
   storageKey:STORAGE_KEY,
-  schemaVersion:16
+  schemaVersion:17
 };
 
 function uid(){return crypto.randomUUID?crypto.randomUUID():String(Date.now()+Math.random())}
@@ -1099,7 +1101,91 @@ function editMaintenance(id){const r=maintenanceData().records.find(x=>x.id===id
  showTab('maintenance');D.maintenanceRecordForm.scrollIntoView({behavior:'smooth',block:'start'});
 }
 
-function renderAll(){renderMaintenance();renderDashboard();renderCharges();renderConsumptionSnapshots();renderTrips();renderSoh();renderAnalytics();renderStress();renderSettings();updateSohPreview();updateChargePreview();renderCrate();renderPlanner()}
+// v0.12.0 · Warranty, optional extensions and annual insurance policies.
+const coverageData=()=>db.coverage||window.T10XCoverage.defaultData();
+const coverageNames={vehicle:'Araç genel garantisi',battery:'Yüksek voltaj bataryası',other:'Diğer ek teminat',service_plan:'Servis / koruma paketi',casco_addon:'Kasko ek teminatı',traffic:'Zorunlu trafik sigortası',casco:'Kasko'};
+const coverageStateName={unknown:'Başlangıç / poliçe bilgisi gerekli',future:'Henüz başlamadı',active:'Kayda göre aktif',soon:'Sınır yaklaşıyor',expired:'Süresi / km sınırı doldu'};
+const coveragePillClass={unknown:'neutral',future:'info',active:'good',soon:'warn',expired:'bad'};
+const coverageDate=v=>v?maintenanceDate(v):'—';
+const coverageMoney=v=>v!==null&&v!==undefined&&v!==''&&Number.isFinite(Number(v))?fmt(v,2)+' ₺':'Bilinmiyor';
+const coverageStateBadge=x=>`<span class="badge ${coveragePillClass[x.state]||'neutral'}">${coverageStateName[x.state]||'Bilinmiyor'}</span>`;
+const coverageDoc=url=>url&&window.T10XCoverage.validHttps(url)?`<a href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer">Belgeyi aç ↗</a>`:'';
+const coverageDateDetail=x=>x?.remainingDays===null||x?.remainingDays===undefined?'Tarih sınırı bilinmiyor':x.remainingDays<0?`${fmt(Math.abs(x.remainingDays),0)} gün önce doldu`:x.remainingDays===0?'Bitiş eşiği bugün':`${fmt(x.remainingDays,0)} gün kaldı`;
+const coverageKmDetail=x=>x?.remainingKm===null||x?.remainingKm===undefined?'Kilometre bilgisi eksik / km sınırı yok':x.remainingKm<0?`${fmt(Math.abs(x.remainingKm),0)} km aşıldı`:x.remainingKm===0?'Kilometre eşiğinde':`${fmt(x.remainingKm,0)} km kaldı`;
+function loadWarrantyForm(){const w=coverageData().warranties[byId('warrantyType').value]||{};
+ for(const [id,v] of Object.entries({warrantyStartDate:w.startDate,warrantyDuration:w.durationMonths,warrantyMaxKm:w.maxOdo,warrantyProvider:w.provider,warrantyReference:w.reference,warrantyDocUrl:w.documentUrl,warrantyNotes:w.notes}))byId(id).value=v??'';
+ byId('warrantyFeedback').textContent='';}
+function resetExtensionForm(){byId('extensionForm').reset();byId('extensionId').value='';byId('extensionFormTitle').textContent='Ek Garanti / Teminat / Paket';byId('extensionSaveBtn').textContent='Ek Teminatı Kaydet';byId('extensionFeedback').textContent='';}
+function resetInsuranceForm(){byId('insuranceForm').reset();byId('insuranceId').value='';byId('insuranceInstallments').value='1';byId('insuranceFormTitle').textContent='Yeni / Eski Poliçe Kaydı';byId('insuranceSaveBtn').textContent='Poliçeyi Kaydet';byId('insuranceFeedback').textContent='';}
+function coverageRow(r,mode,status){const kind=coverageNames[r.type]||'Ek teminat';
+ const premium=mode==='policy'?coverageMoney(r.premium):coverageMoney(r.premium);
+ const detail=mode==='policy'?`${escapeHtml(r.company||'—')} · ${escapeHtml(r.policyNumber||'Poliçe numarası girilmedi')}`:`${escapeHtml(r.provider||'—')} · ${escapeHtml(r.reference||'')}`;
+ const owner=mode==='policy'?'insurance':'extension';
+ return `<div class="coverage-history-row"><div class="coverage-row-heading"><div><strong>${escapeHtml(kind)}</strong><small>${detail}</small></div>${coverageStateBadge(status)}</div><div class="coverage-row-sub">${coverageDate(r.startDate)} → ${coverageDate(r.endDate)} ${r.maxOdo?' · '+fmt(r.maxOdo,0)+' km üst sınırı':''}<span>${premium}</span></div><p class="coverage-small">${mode==='policy'?`Ödenen: ${coverageMoney(r.paidAmount)} · ${fmt(r.installments,0)} taksit`:escapeHtml(r.scope||'Belirtilmiş kapsam yok')}${r.notes?'<br>'+escapeHtml(r.notes):''}</p><div class="coverage-row-actions">${coverageDoc(r.documentUrl)}<button type="button" class="link-btn" data-cov-edit="${owner}" data-cov-id="${escapeHtml(r.id)}">Düzenle</button><button type="button" class="link-btn maintenance-delete" data-cov-delete="${owner}" data-cov-id="${escapeHtml(r.id)}">Sil</button></div></div>`;
+}
+function coverageMiniRow(title,x,meta=''){const detail=x.state==='unknown'?'Başlangıç tarihini girin':`${coverageDateDetail(x)}${x.remainingKm!==null&&x.remainingKm!==undefined?' · '+coverageKmDetail(x):''}`;
+ return `<div class="coverage-mini-row"><div><strong>${title}</strong><small>${escapeHtml(meta||detail)}</small></div>${coverageStateBadge(x)}</div>`;}
+function renderCoverage(){const data=coverageData(),currentKm=latestOdo(),list=window.T10XCoverage.warrantyList(data,currentKm),ins=window.T10XCoverage.insuranceSummary(data);
+ const extensionStatuses=data.extensions.map(r=>window.T10XCoverage.extensionSummary(r,currentKm,null,data.warnings));
+ const nearExtensions=extensionStatuses.filter(x=>x.state==='soon').length,endedExtensions=extensionStatuses.filter(x=>x.state==='expired').length;
+ byId('warrantyDashboard').innerHTML=list.map(w=>coverageMiniRow(coverageNames[w.type],w)).join('')+(data.extensions.length?`<p class="coverage-caption">${data.extensions.length} ek teminat kaydı · ${nearExtensions} sınırı yaklaşan · ${endedExtensions} süresi/km sınırı dolan. Ayrıntı için Garantiler menüsünü açın.</p>`:'<p class="coverage-caption">Ek garanti / teminat tanımlanmadı.</p>');
+ byId('insuranceDashboard').innerHTML=['traffic','casco'].map(type=>{const x=ins[type];return x.highlighted?coverageMiniRow(coverageNames[type],x.highlighted,`${escapeHtml(x.highlighted.company)} · Bitiş ${coverageDate(x.highlighted.endDate)} · ${coverageDateDetail(x.highlighted)}`):coverageMiniRow(coverageNames[type],{state:'unknown'},'Henüz poliçe kaydı yok');}).join('');
+ byId('warrantyOverview').innerHTML=list.map(w=>`<article class="card coverage-main-card"><div class="card-head"><h3>${coverageNames[w.type]}</h3>${coverageStateBadge(w)}</div><div class="coverage-two-stat"><div><span>Garanti bitiş eşiği</span><strong>${coverageDate(w.endDate)}</strong><small>${coverageDateDetail(w)}</small></div><div><span>Toplam km sınırı</span><strong>${fmt(w.maxOdo,0)} km</strong><small>${coverageKmDetail(w)}</small></div></div><p class="coverage-small">${w.state==='unknown'?'Başlangıç tarihi henüz kaydedilmedi.':'Tarih veya kilometre sınırından hangisi önce gerçekleşirse geçerli olur.'}</p>${coverageDoc(w.config.documentUrl)}</article>`).join('');
+ const extensions=[...data.extensions].sort((a,b)=>String(b.startDate).localeCompare(String(a.startDate)));
+ byId('extensionCount').textContent=`${extensions.length} kayıt`;
+ byId('extensionHistory').innerHTML=extensions.length?`<div class="coverage-history">${extensions.map(r=>coverageRow(r,'extension',window.T10XCoverage.extensionSummary(r,currentKm,null,data.warnings))).join('')}</div>`:'<div class="maintenance-empty">Ek garanti veya teminat henüz eklenmedi. Almadığınız bir ek paket otomatik var sayılmaz.</div>';
+ byId('insuranceOverview').innerHTML=['traffic','casco'].map(type=>{const g=ins[type];return `<article class="card coverage-main-card"><div class="card-head"><h3>${coverageNames[type]}</h3>${coverageStateBadge(g.highlighted||{state:'unknown'})}</div>${g.highlighted?`<div class="coverage-two-stat"><div><span>Poliçe bitiş tarihi</span><strong>${coverageDate(g.highlighted.endDate)}</strong><small>${coverageDateDetail(g.highlighted)}</small></div><div><span>Toplam prim</span><strong>${coverageMoney(g.highlighted.premium)}</strong><small>${escapeHtml(g.highlighted.company||'')}</small></div></div>${g.current&&g.future?'<p class="coverage-caption">Yenileme kaydı mevcut; mevcut ve gelecek poliçeler ayrı tutuluyor.</p>':''}`:'<div class="maintenance-empty">Bu türde poliçe kaydı yok. Poliçe durumunu öğrenmek için başlangıç ve bitiş tarihlerini girin.</div>'}</article>`;}).join('');
+ const policies=[...data.policies].sort((a,b)=>String(b.startDate).localeCompare(String(a.startDate)));
+ byId('insuranceCount').textContent=`${policies.length} poliçe`;
+ byId('insuranceHistory').innerHTML=policies.length?`<div class="coverage-history">${policies.map(r=>coverageRow(r,'policy',window.T10XCoverage.status({startDate:r.startDate,endDate:r.endDate,warnDays:data.warnings.policyDays}))).join('')}</div>`:'<div class="maintenance-empty">Henüz poliçe eklenmedi. Eski poliçeleri de ekleyebilirsiniz; geçmiş yenilemeler silinmez.</div>';
+ const histories=['traffic','casco'].map(type=>({type,rows:window.T10XCoverage.renewalComparisons(data.policies,type)}));
+ byId('insurancePremiumSummary').innerHTML=histories.map(g=>`<div class="coverage-renewal-group"><h3>${coverageNames[g.type]}</h3>${g.rows.length?g.rows.map((r,i)=>`<div class="coverage-renewal-row"><span>${r.startDate.slice(0,4)} · ${escapeHtml(r.company||'—')}</span><strong>${coverageMoney(r.premium)}</strong>${r.changePct===null?'':`<small class="${r.changePct>0?'coverage-price-up':'coverage-price-down'}">${r.changePct>0?'+':''}${fmt(r.changePct,1)}%</small>`}</div>`).join(''):'<p class="muted">Henüz prim kaydı yok.</p>'}</div>`).join('');
+ for(const [id,val] of Object.entries({coverageWarnDays:data.warnings.days,coverageWarnKm:data.warnings.km,coverageWarnPolicy:data.warnings.policyDays})){if(document.activeElement!==byId(id))byId(id).value=val??'';}
+}
+function editCoverageRecord(mode,id){const r=(mode==='insurance'?coverageData().policies:coverageData().extensions).find(x=>x.id===id);if(!r)return;
+ if(mode==='insurance'){
+  const map={insuranceId:r.id,insuranceType:r.type,insuranceCompany:r.company,insuranceNumber:r.policyNumber,insuranceAgency:r.agency,insuranceStart:r.startDate,insuranceEnd:r.endDate,insurancePremium:r.premium,insurancePaid:r.paidAmount,insurancePaymentDate:r.paymentDate,insuranceInstallments:r.installments,insuranceNoClaim:r.noClaim,insuranceDeductible:r.deductible,insuranceScope:r.scope,insuranceBenefits:r.benefits,insuranceDocUrl:r.documentUrl,insuranceNotes:r.notes};
+  for(const [id,v] of Object.entries(map))byId(id).value=v??'';byId('insuranceFormTitle').textContent='Poliçeyi Düzenle';byId('insuranceSaveBtn').textContent='Değişiklikleri Kaydet';showTab('insurance');byId('insuranceForm').scrollIntoView({behavior:'smooth',block:'start'});
+ }else{
+  const map={extensionId:r.id,extensionType:r.type,extensionProvider:r.provider,extensionStart:r.startDate,extensionEnd:r.endDate,extensionMaxKm:r.maxOdo,extensionPremium:r.premium,extensionScope:r.scope,extensionReference:r.reference,extensionDocUrl:r.documentUrl,extensionNotes:r.notes};
+  for(const [id,v] of Object.entries(map))byId(id).value=v??'';byId('extensionFormTitle').textContent='Ek Teminatı Düzenle';byId('extensionSaveBtn').textContent='Değişiklikleri Kaydet';showTab('warranty');byId('extensionForm').scrollIntoView({behavior:'smooth',block:'start'});
+ }
+}
+function initCoverageListeners(){
+ byId('warrantyType').addEventListener('change',loadWarrantyForm);
+ byId('warrantyForm').addEventListener('submit',e=>{e.preventDefault();const kind=byId('warrantyType').value;
+  const w={startDate:byId('warrantyStartDate').value,durationMonths:Number(byId('warrantyDuration').value),maxOdo:Number(byId('warrantyMaxKm').value),provider:byId('warrantyProvider').value.trim(),reference:byId('warrantyReference').value.trim(),documentUrl:byId('warrantyDocUrl').value.trim(),notes:byId('warrantyNotes').value.trim()};
+  const errors=window.T10XCoverage.warrantyErrors(w);if(!window.T10XCoverage.validHttps(w.documentUrl))errors.push('Belge bağlantısı HTTPS olmalı.');if(errors.length){byId('warrantyFeedback').textContent=errors.join(' ');return;}
+  db.coverage.warranties[kind]=w;save();byId('warrantyFeedback').textContent='Garanti kaydedildi; Dashboard güncellendi.';
+ });
+ byId('extensionForm').addEventListener('submit',e=>{e.preventDefault();const r={id:byId('extensionId').value||uid(),type:byId('extensionType').value,provider:byId('extensionProvider').value.trim(),startDate:byId('extensionStart').value,endDate:byId('extensionEnd').value,maxOdo:byId('extensionMaxKm').value===''?null:Number(byId('extensionMaxKm').value),premium:byId('extensionPremium').value===''?null:Number(byId('extensionPremium').value),scope:byId('extensionScope').value.trim(),reference:byId('extensionReference').value.trim(),documentUrl:byId('extensionDocUrl').value.trim(),notes:byId('extensionNotes').value.trim()};
+  const errors=window.T10XCoverage.extensionErrors(r);if(!window.T10XCoverage.validHttps(r.documentUrl))errors.push('Belge bağlantısı HTTPS olmalı.');if(errors.length){byId('extensionFeedback').textContent=errors.join(' ');return;}
+  const idx=db.coverage.extensions.findIndex(x=>x.id===r.id);if(idx>=0)db.coverage.extensions[idx]=r;else db.coverage.extensions.push(r);save();resetExtensionForm();byId('extensionFeedback').textContent='Ek teminat kaydedildi.';
+ });
+ byId('extensionClear').addEventListener('click',resetExtensionForm);
+ byId('insuranceForm').addEventListener('submit',e=>{e.preventDefault();const r={id:byId('insuranceId').value||uid(),type:byId('insuranceType').value,company:byId('insuranceCompany').value.trim(),policyNumber:byId('insuranceNumber').value.trim(),agency:byId('insuranceAgency').value.trim(),startDate:byId('insuranceStart').value,endDate:byId('insuranceEnd').value,premium:byId('insurancePremium').value===''?null:Number(byId('insurancePremium').value),paidAmount:byId('insurancePaid').value===''?null:Number(byId('insurancePaid').value),paymentDate:byId('insurancePaymentDate').value,installments:Number(byId('insuranceInstallments').value),noClaim:byId('insuranceNoClaim').value.trim(),deductible:byId('insuranceDeductible').value.trim(),scope:byId('insuranceScope').value.trim(),benefits:byId('insuranceBenefits').value.trim(),documentUrl:byId('insuranceDocUrl').value.trim(),notes:byId('insuranceNotes').value.trim()};
+  const errors=window.T10XCoverage.policyErrors(r);if(!window.T10XCoverage.validHttps(r.documentUrl))errors.push('Belge bağlantısı HTTPS olmalı.');if(errors.length){byId('insuranceFeedback').textContent=errors.join(' ');return;}
+  const idx=db.coverage.policies.findIndex(x=>x.id===r.id);if(idx>=0)db.coverage.policies[idx]=r;else db.coverage.policies.push(r);save();resetInsuranceForm();byId('insuranceFeedback').textContent='Poliçe kaydedildi; bitiş uyarısı ve prim geçmişi güncellendi.';
+ });
+ byId('insuranceClear').addEventListener('click',resetInsuranceForm);
+ for(const id of ['extensionHistory','insuranceHistory'])byId(id).addEventListener('click',e=>{const edit=e.target.closest('[data-cov-edit]'),del=e.target.closest('[data-cov-delete]');
+  if(edit){editCoverageRecord(edit.dataset.covEdit,edit.dataset.covId);return;}
+  if(del){const mode=del.dataset.covDelete,ident=del.dataset.covId,arr=mode==='insurance'?db.coverage.policies:db.coverage.extensions,r=arr.find(x=>x.id===ident);if(!r||!confirm('Bu kayıt silinsin mi? Önceki poliçe/teminat geçmişinden çıkarılacaktır.'))return;
+   if(mode==='insurance')db.coverage.policies=arr.filter(x=>x.id!==ident);else db.coverage.extensions=arr.filter(x=>x.id!==ident);save();mode==='insurance'?resetInsuranceForm():resetExtensionForm();}
+ });
+ byId('coverageWarningsForm').addEventListener('submit',e=>{e.preventDefault();const warnings={days:Number(byId('coverageWarnDays').value),km:Number(byId('coverageWarnKm').value),policyDays:Number(byId('coverageWarnPolicy').value)};
+  if(!Number.isInteger(warnings.days)||warnings.days<0||warnings.days>365||!Number.isInteger(warnings.km)||warnings.km<0||warnings.km>100000||!Number.isInteger(warnings.policyDays)||warnings.policyDays<0||warnings.policyDays>365){byId('coverageWarningsFeedback').textContent='Uyarı eşiklerini kontrol edin.';return;}
+  db.coverage.warnings=warnings;save();byId('coverageWarningsFeedback').textContent='Uyarı ayarları güncellendi.';
+ });
+ byId('warrantyExportCsv').addEventListener('click',()=>exportCsv('t10x_garanti_ek_teminat_kayitlari.csv',['Tur','Baslangic','Bitis','Km siniri','Saglayici','Tutar TL','Kapsam','Belge','Not'],[
+ ...Object.entries(db.coverage.warranties).map(([type,w])=>[type,w.startDate,window.T10XCoverage.addMonths(w.startDate,Number(w.durationMonths)),w.maxOdo,w.provider,'',w.reference,w.documentUrl,w.notes]),
+ ...db.coverage.extensions.map(r=>[r.type,r.startDate,r.endDate,r.maxOdo,r.provider,r.premium,r.scope,r.documentUrl,r.notes])
+ ]));
+ byId('insuranceExportCsv').addEventListener('click',()=>exportCsv('t10x_sigorta_kasko_policeleri.csv',['Tur','Sirket','Police no','Acente','Baslangic','Bitis','Prim TL','Odenen TL','Odeme Tarihi','Taksit','Hasarsizlik','Muafiyet','Teminatlar','Ek hizmetler','Belge','Not'],db.coverage.policies.map(r=>[r.type,r.company,r.policyNumber,r.agency,r.startDate,r.endDate,r.premium,r.paidAmount,r.paymentDate,r.installments,r.noClaim,r.deductible,r.scope,r.benefits,r.documentUrl,r.notes])));
+ loadWarrantyForm();
+}
+
+function renderAll(){renderMaintenance();renderCoverage();renderDashboard();renderCharges();renderConsumptionSnapshots();renderTrips();renderSoh();renderAnalytics();renderStress();renderSettings();updateSohPreview();updateChargePreview();renderCrate();renderPlanner()}
 
 D.chargeForm.addEventListener('submit',e=>{
   e.preventDefault();const id=D.chargeId.value||uid(),odoUnknown=!!D.chargeOdoUnknown.checked;
@@ -1403,6 +1489,7 @@ D.exportTripsCsv.onclick=()=>exportCsv('surus_kayitlari.csv',['Tarih','Mesafe km
 D.exportDriveSessionsCsv.onclick=()=>exportCsv('surus_park_zaman_kayitlari.csv',['Baslangic','Bitis','Baslangic km','Bitis km','Baslangic SOC','Bitis SOC','Mesafe km','Tuketim kWh/100 km','Tam kayit'],db.driveSessions.map(x=>[x.startAt,x.endAt,x.startOdo,x.endOdo,x.startSoc,x.endSoc,x.distance,x.consumption,x.complete?'Evet':'Hayir']));
 
 function setDefaultDateTimes(){const now=new Date();const local=new Date(now.getTime()-now.getTimezoneOffset()*60000).toISOString().slice(0,16);if(!D.chargeDate.value)D.chargeDate.value=local;if(!D.consumptionDate.value)D.consumptionDate.value=local;if(!D.tripDate.value)D.tripDate.value=now.toISOString().slice(0,10);if(!D.sohDate.value)D.sohDate.value=now.toISOString().slice(0,10);if(D.plannerDeparture&&!D.plannerDeparture.value){const dep=new Date(now);dep.setDate(dep.getDate()+1);dep.setHours(7,30,0,0);D.plannerDeparture.value=new Date(dep.getTime()-dep.getTimezoneOffset()*60000).toISOString().slice(0,16)}}
+initCoverageListeners();
 setDefaultDateTimes();if(D.maintenanceRecordDate)D.maintenanceRecordDate.value=(()=>{const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;})();updateSohMethod();if(!D.consumptionOdo.value)D.consumptionOdo.value=db.settings.currentOdo||'';renderAll();
 
 

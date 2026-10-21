@@ -1,8 +1,8 @@
-# T10X Araç & Batarya Takip v0.11.0 — Faz 2: Periyodik Bakım Yönetimi
+# T10X Araç & Batarya Takip v0.12.0 — Faz 2: Periyodik Bakım Yönetimi
 
 Kişisel T10X (88,5 kWh NMC) kullanımı için local-first + Firebase senkronizasyonlu, iPhone/PWA uyumlu batarya ve şarj takip uygulaması.
 
-## v0.11.0 · Faz 2 — Periyodik Bakım Yönetimi
+## v0.12.0 · Faz 2 — Periyodik Bakım Yönetimi
 
 **ÖNCEKİ DOSYALARIN TÜMÜ + `maintenance-model.js`** GitHub Pages köküne yüklenmelidir. Firebase tek kullanıcı UID ve Realtime Database Rules değiştirilmez. Önce JSON yedeği alın.
 
@@ -89,7 +89,7 @@ Repo köküne bu klasörün içindeki dosyaları yükleyin.
 
 Settings > Pages > Deploy from a branch > `main` / `(root)`
 
-Güncel service-worker cache anahtarı `t10x-battery-v0.11.0-maintenance`; önceki sürümlerin önbellekleri aktivasyon sırasında temizlenir.
+Güncel service-worker cache anahtarı `t10x-battery-v0.12.0-maintenance`; önceki sürümlerin önbellekleri aktivasyon sırasında temizlenir.
 
 ## Bilimsel sınır
 
@@ -265,3 +265,20 @@ v0.9.6 paketindeki **yeni `range-model.js`** dahil tüm dosyaları GitHub Pages 
 2. AC/DC şarj ettiyseniz Şarj Kayıtları bölümüne mutlaka kaydedin, aksi halde gözlem aralığının şarjsız olduğu doğrulanamaz.
 3. Aynı menzil hesabına bağlı tüketim sayacı girişi isteğe bağlıdır.
 4. Eski sürüş geçmişi silinmemeli; yeni kayıtları zorunlu manuel sürüş gibi oluşturmanız gerekmez.
+
+---
+
+## v0.12.0 — Faz 3: Garanti, Sigorta ve Kasko
+
+Mevcut araç/batarya analizleri ve Faz 2 bakım kayıtları korunmuştur. Yeni ana menüler:
+
+1. **Garantiler & Uzatmalar**: Araç genel garantisi (varsayılan 36 ay / toplam 100.000 km), yüksek voltaj batarya garantisi (varsayılan 96 ay / toplam 160.000 km). Resmî garanti başlangıcı **otomatik uydurulmaz**, kullanıcı garanti belgesinden girmelidir. İki ayrı eşikten önce dolanı geçerlidir. Ek garanti, servis/koruma paketi, başka teminat ve kasko ek teminatları ayrı kayıtlar halinde saklanır; temel garantinin bitişini değiştirmez.
+2. **Sigorta & Kasko**: Her bir yıllık poliçe bağımsız saklanır. Firma, poliçe no, acente, başlangıç/bitiş, prim, ödenen tutar, ödeme tarihi, taksit sayısı, hasarsızlık, muafiyet, teminat, ikame araç/yol yardım, belge bağlantısı ve notlar kaydedilir. Kayıtlar düzenlenebilir/silinebilir; CSV ile dışa aktarılır. Önceki poliçe geçmişi ve yenileme tutarları karşılaştırılır; yüzde farkı nominal ₺ değişimidir.
+3. **Dashboard**: İki garantinin durumunu, trafik/kasko poliçelerinin mevcut durumunu, yaklaşan veya geçen tarih/km sınırlarını gösterir.
+4. **Uyarı ayarları**: Garanti için varsayılan 90 gün / 5.000 km, poliçeler için 30 gün kala uygulama içi uyarı. Bu sürüm **arka planda e-posta, push veya SMS göndermez**.
+
+İlk kullanım sırası: *Garantiler & Uzatmalar → araç başlangıç tarihi ve kaydet → batarya başlangıç tarihi ve kaydet → Sigorta & Kasko → mevcut trafik poliçesi → mevcut kasko poliçesi → geçmiş poliçeler ve satın aldığınız ek teminatlar.* Farklı firma ve başlangıç tarihleri desteklenir.
+
+Yeni model `coverage-model.js` ve `db.coverage` nesnesidir. Veri şeması `17`, yerel kayıt anahtarı `t10xBatteryTracker_v16` olarak ilerler; eski `v15` ve daha önceki yerel kayıtları okuyarak aktarır. Firebase Realtime Database altında mevcut kullanıcı kaydının JSON nesnesine yeni `coverage` alanı eklenir. Tek kullanıcı güvenlik kuralları değiştirilmez.
+
+**Önemli:** Üreticinin garanti koşulları, sözleşme/poliçe kapsamı ve başlangıç tarihi aracınıza ait belgeden doğrulanmalıdır. Ek sigorta, otomatik üretici garantisi değildir. Sadece HTTPS belge bağlantıları kabul edilir; dosyaları herkese açık GitHub deposuna koymayın. Bu sürüm belgeyi uygulamaya yüklemez, erişim kontrollü bağlantısını saklar. Hasar/servis/parça değişimi eşleştirmesi Faz 4'tedir.

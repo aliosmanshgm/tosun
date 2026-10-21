@@ -183,3 +183,13 @@ GitHub'a v0.9.6 dosyalarını yükledikten sonra önceki service worker önbelle
 6. GitHub Pages güncellemesi sonrasında tarayıcıda eski ekran görünürse sekmeyi kapatıp yeniden açın veya sayfayı yeniden yükleyin (SW önbelleği sürümde değiştirildi).
 
 > Bu yükseltme bakım/garanti/servis fazlarını **eklemez**. Yeni günlük durum kaydı, geçmiş kilometre ve SOC verileriyle birikerek çalışır.
+
+### Faz 3 (v0.12.0) güncellemesi
+
+- Mevcut uygulama içinden **JSON Yedekle** ile bir yedek alın.
+- ZIP paketindeki uygulama klasörünün **tüm içeriğini** GitHub Pages depo köküne yükleyin. `coverage-model.js` mutlaka yüklenmelidir; `index.html` bu dosyayı `app.js` öncesinde çağırır.
+- `database.rules.json` mevcut tek kullanıcı UID kuralını korur; Firebase kimlik bilgilerinizi veya veritabanı kurallarını genişletmeyin.
+- İlk girişten sonra **Garantiler & Uzatmalar** sayfasında garanti belgelerindeki başlangıç tarihlerini girin. Varsayılan 36/96 ay ve 100.000/160.000 km sınırları düzenlenebilir.
+- **Sigorta & Kasko** bölümünde trafik ve kasko poliçelerini ayrı ayrı kaydedin. Eski poliçeleri silmeyin: yenileme karşılaştırması için geçmiş veriye ihtiyaç vardır.
+- İçe alma / dışa aktarma JSON, yeni `coverage` kayıtlarını da içerir. Belgelerin kendisi değil, yalnızca URL bağlantısı saklanır.
+- Uyarılar uygulama açıldığında hesaplanır. Otomatik e-posta / bildirim henüz yoktur.

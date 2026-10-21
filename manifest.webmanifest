@@ -1,9 +1,9 @@
 {
   "name": "T10X Araç ve Batarya Takip",
-  "short_name": "T10X Batarya",
+  "short_name": "T10X Araç",
   "start_url": "./",
   "display": "standalone",
   "background_color": "#f8fafc",
   "theme_color": "#101828",
-  "description": "T10X araç bakım, NMC batarya, şarj, SOH, SOC, C-rate ve tüketim takip uygulaması"
+  "description": "T10X garanti, sigorta, kasko, araç bakım, NMC batarya, şarj, SOH, SOC, C-rate ve tüketim takip uygulaması"
 }
