@@ -1,5 +1,5 @@
-const STORAGE_KEY='t10xBatteryTracker_v14';
-const LEGACY_KEYS=['t10xBatteryTracker_v13','t10xBatteryTracker_v12','t10xBatteryTracker_v11','t10xBatteryTracker_v10','t10xBatteryTracker_v9','t10xBatteryTracker_v8','t10xBatteryTracker_v6','t10xBatteryTracker_v5','t10xBatteryTracker_v4','t10xBatteryTracker_v3','t10xBatteryTracker_v2','t10xBatteryTracker_v1'];
+const STORAGE_KEY='t10xBatteryTracker_v15';
+const LEGACY_KEYS=['t10xBatteryTracker_v14','t10xBatteryTracker_v13','t10xBatteryTracker_v12','t10xBatteryTracker_v11','t10xBatteryTracker_v10','t10xBatteryTracker_v9','t10xBatteryTracker_v8','t10xBatteryTracker_v6','t10xBatteryTracker_v5','t10xBatteryTracker_v4','t10xBatteryTracker_v3','t10xBatteryTracker_v2','t10xBatteryTracker_v1'];
 const DEFAULT_PROVIDERS=[
   "ZES Şarj",
   "Trugo Şarj",
@@ -163,14 +163,15 @@ const DEFAULT_PROVIDERS=[
   "Ev / Kendi AC Şarjım"
 ];
 const defaults={
-  meta:{schemaVersion:15,updatedAt:''},
+  meta:{schemaVersion:16,updatedAt:''},
   settings:{
     vehicleName:'T10X Uzun Menzil',batteryChemistry:'NMC',ownershipStartOdo:32356,ownershipStartSoc:59,ownershipStartDate:'',trackingStartOdo:33537,currentOdo:33537,currentSoc:76,
     referenceCapacity:88.5,wltpRangeKm:523,preferredMinSoc:20,preferredMaxSoc:80,
     stressWindow:12,plannerReserveSoc:15,plannerMarginPct:10,mgmCity:'ANKARA',currentSocUpdatedAt:'',chargingLedgerComplete:false,batteryUsableCapacity:null,acChargeEfficiency:90,dcChargeEfficiency:96
   },
   providers:[...DEFAULT_PROVIDERS],
-  charges:[],trips:[],consumptionSnapshots:[],sohTests:[],socSnapshots:[],driveSessions:[],activeDrive:null
+  charges:[],trips:[],consumptionSnapshots:[],sohTests:[],socSnapshots:[],driveSessions:[],activeDrive:null,
+  maintenance:{config:{...window.T10XMaintenance.DEFAULT_CONFIG},records:[]}
 };
 
 let db=load();
@@ -184,13 +185,14 @@ const domIds=[
   'crateForm','crateCapacity','cratePower','crateStartSoc','crateEndSoc','crateTemp',
   'settingsForm','vehicleName','batteryChemistry','ownershipStartOdo','ownershipStartSoc','ownershipStartDate','trackingStartOdo','currentOdo','currentSoc','referenceCapacity','wltpRangeKm','preferredMinSoc','preferredMaxSoc','stressWindow','plannerReserveDefault','plannerMarginDefault','mgmCity','clearAllBtn',
   'chargeLedgerComplete','energyBalanceDetail','batteryUsableCapacity','acChargeEfficiency','dcChargeEfficiency','quickStatusForm','quickCurrentOdo','quickCurrentSoc','quickSinceCharge','quickDriveConsumption','quickDriveTemp','quickDriveWeatherBtn','quickDriveWeatherStatus','quickDriveStartBtn','quickDriveEndBtn','driveStatusInfo','providerNew','providerAddBtn','providerResetBtn','providerManager',
-  'exportJsonBtn','importJsonInput','exportChargesCsv','exportConsumptionCsv','exportTripsCsv','exportDriveSessionsCsv'
+  'exportJsonBtn','importJsonInput','exportChargesCsv','exportConsumptionCsv','exportTripsCsv','exportDriveSessionsCsv',
+  'maintenanceConfigForm','maintenanceStartDate','maintenanceStartOdo','maintenanceIntervalMonths','maintenanceIntervalKm','maintenanceWarnDays','maintenanceWarnKm','maintenanceConfigFeedback','maintenanceRecordForm','maintenanceRecordFormTitle','maintenanceRecordId','maintenanceRecordType','maintenanceMilestone','maintenanceMilestoneWrap','maintenanceRecordDate','maintenanceRecordOdo','maintenanceServiceCenter','maintenanceWork','maintenanceCost','maintenanceAdviceDate','maintenanceAdviceOdo','maintenanceDocumentUrl','maintenanceNotes','maintenanceRecordSubmit','maintenanceRecordReset','maintenanceRecordFeedback','maintenanceExportCsv'
 ];
 const D=Object.fromEntries(domIds.map(id=>[id,byId(id)]));
 
 function migrate(obj){
   const out={...structuredClone(defaults),...(obj||{})};
-  out.meta={...structuredClone(defaults.meta),...(obj?.meta||{}),schemaVersion:15};
+  out.meta={...structuredClone(defaults.meta),...(obj?.meta||{}),schemaVersion:16};
   out.settings={...structuredClone(defaults.settings),...(obj?.settings||{})};
   delete out.settings.targetDcShare;delete out.settings.balanceWindow;
   if(obj?.settings&&obj.settings.ownershipStartSoc==null){
@@ -205,6 +207,7 @@ function migrate(obj){
   out.sohTests=(Array.isArray(obj?.sohTests)?obj.sohTests:[]).map(x=>window.T10XSohModel.normalizedRecord(x));
   out.socSnapshots=Array.isArray(obj?.socSnapshots)?obj.socSnapshots:[];
   out.driveSessions=Array.isArray(obj?.driveSessions)?obj.driveSessions:[];
+  out.maintenance={config:window.T10XMaintenance.normalizeConfig(obj?.maintenance?.config||{}),records:Array.isArray(obj?.maintenance?.records)?obj.maintenance.records.map(x=>({...x})):[]};
   out.activeDrive=(obj?.activeDrive&&Number.isFinite(new Date(obj.activeDrive.startAt).getTime()))?obj.activeDrive:null;
   return out;
 }
@@ -216,14 +219,14 @@ function load(){
   }catch{return structuredClone(defaults)}
 }
 function persistLocal({emit=false}={}){localStorage.setItem(STORAGE_KEY,JSON.stringify(db));renderAll();if(emit)window.dispatchEvent(new CustomEvent('t10x:data-changed',{detail:{db:structuredClone(db)}}));}
-function save(){db.meta={...(db.meta||{}),schemaVersion:15,updatedAt:new Date().toISOString()};persistLocal({emit:true})}
+function save(){db.meta={...(db.meta||{}),schemaVersion:16,updatedAt:new Date().toISOString()};persistLocal({emit:true})}
 
 window.T10XApp={
   getData:()=>structuredClone(db),
   replaceData:(next,{emit=false}={})=>{db=migrate(next||{});persistLocal({emit});return structuredClone(db)},
-  hasMeaningfulData:()=>Boolean(db.charges.length||db.trips.length||db.consumptionSnapshots.length||db.sohTests.length||db.socSnapshots.length||db.driveSessions.length||!!db.activeDrive||db.meta?.updatedAt),
+  hasMeaningfulData:()=>Boolean(db.charges.length||db.trips.length||db.consumptionSnapshots.length||db.sohTests.length||db.socSnapshots.length||db.driveSessions.length||!!db.activeDrive||db.maintenance?.records?.length||db.maintenance?.config?.startDate||db.meta?.updatedAt),
   storageKey:STORAGE_KEY,
-  schemaVersion:15
+  schemaVersion:16
 };
 
 function uid(){return crypto.randomUUID?crypto.randomUUID():String(Date.now()+Math.random())}
@@ -1053,7 +1056,50 @@ function renderSettings(){
   const s=db.settings;
   D.vehicleName.value=s.vehicleName;D.batteryChemistry.value=s.batteryChemistry;D.ownershipStartOdo.value=s.ownershipStartOdo??32356;D.ownershipStartSoc.value=s.ownershipStartSoc??59;D.ownershipStartDate.value=s.ownershipStartDate||'';D.trackingStartOdo.value=s.trackingStartOdo??33537;D.currentOdo.value=s.currentOdo??33537;D.currentSoc.value=s.currentSoc??76;D.referenceCapacity.value=s.referenceCapacity;D.wltpRangeKm.value=s.wltpRangeKm??523;D.preferredMinSoc.value=s.preferredMinSoc;D.preferredMaxSoc.value=s.preferredMaxSoc;D.stressWindow.value=s.stressWindow??12;D.plannerReserveDefault.value=s.plannerReserveSoc??15;D.plannerMarginDefault.value=s.plannerMarginPct??10;D.mgmCity.value=s.mgmCity||'ANKARA';D.batteryUsableCapacity.value=s.batteryUsableCapacity??'';D.acChargeEfficiency.value=s.acChargeEfficiency??90;D.dcChargeEfficiency.value=s.dcChargeEfficiency??96;if(!D.crateCapacity.matches(':focus'))D.crateCapacity.value=s.referenceCapacity;if(D.plannerReserveSoc&&!D.plannerReserveSoc.matches(':focus'))D.plannerReserveSoc.value=s.plannerReserveSoc??15;if(D.plannerMargin&&!D.plannerMargin.matches(':focus'))D.plannerMargin.value=s.plannerMarginPct??10;renderProviders();
 }
-function renderAll(){renderDashboard();renderCharges();renderConsumptionSnapshots();renderTrips();renderSoh();renderAnalytics();renderStress();renderSettings();updateSohPreview();updateChargePreview();renderCrate();renderPlanner()}
+
+// v0.11.0 · Maintenance is a separate durable module. Manufacturer milestones remain fixed after early service.
+function maintenanceData(){return db.maintenance||{config:{...window.T10XMaintenance.DEFAULT_CONFIG},records:[]};}
+function maintenanceCalc(){const m=maintenanceData();return window.T10XMaintenance.compute({config:m.config,records:m.records,currentOdo:latestOdo()});}
+function maintenanceDate(s){return s?new Date(`${s}T12:00:00`).toLocaleDateString('tr-TR'):'—';}
+function maintenanceStatusClass(s){return s==='due'?'bad':s==='soon'?'warn':s==='ok'?'good':'neutral';}
+function maintenanceStatusText(s){return s==='due'?'Bakım zamanı geldi':s==='soon'?'Bakım yaklaşıyor':s==='ok'?'Takvimde':'Kurulum gerekli';}
+function maintenanceNumber(v){return Number.isFinite(v)?fmt(v,0):'—';}
+function maintenanceSummaryHtml(x,short=false){
+ if(!x.ready)return `<div class="maintenance-empty"><strong>Bakım takvimi henüz başlatılmadı.</strong><p>İlk tescil/bakım başlangıç tarihini girin. Başlangıç tarihi olmadan bakım zamanı tahmin etmeyeceğiz.</p></div>`;
+ const dateStatus=x.remainingDays<=0?`<span class="maintenance-overdue">${Math.abs(x.remainingDays)} gün ${x.remainingDays===0?'· bugün':'geçti'}</span>`:`${x.remainingDays} gün kaldı`;
+ const kmStatus=x.remainingKm===null?'Güncel km bekleniyor':x.remainingKm<=0?`<span class="maintenance-overdue">${fmt(Math.abs(x.remainingKm),0)} km ${x.remainingKm===0?'· eşikte':'aşıldı'}</span>`:`${fmt(x.remainingKm,0)} km kaldı`;
+ const extra=x.serviceAdvice&&!short?`<p class="maintenance-advice">Servis belgesindeki sonraki öneri: <strong>${x.serviceAdvice.date?maintenanceDate(x.serviceAdvice.date):'—'}</strong> / <strong>${x.serviceAdvice.odo===null?'—':fmt(x.serviceAdvice.odo,0)+' km'}</strong>. Üretici takvimini otomatik değiştirmez.</p>`:'';
+ return `<div class="maintenance-status-grid"><div><span>Bir sonraki bakım</span><strong>${x.milestone}. periyodik bakım</strong><small>Takvim başlangıcından ${x.milestone*x.config.intervalMonths} ay / ${fmt(x.milestone*x.config.intervalKm,0)} km</small></div><div><span>Tarih eşiği</span><strong>${maintenanceDate(x.dueDate)}</strong><small>${dateStatus}</small></div><div><span>Kilometre eşiği</span><strong>${fmt(x.dueOdo,0)} km</strong><small>${kmStatus}</small></div></div><p class="maintenance-guidance">İki koşul ayrı kontrol edilir. <strong>İlk ulaşılan sınır</strong> bakım zamanını belirler. ${x.status==='due'?'Bakım belgenizi kontrol edin ve servis planlayın.':x.status==='soon'?'Yaklaşan tarih veya kilometre sınırına dikkat edin.':'Mevcut kayda göre yaklaşan bakım uyarısı yok.'}</p>${extra}${x.missingMilestones.length?'<p class="maintenance-overdue">Geçmiş bakım numaralarında boşluk var; kayıtları kontrol edin.</p>':''}`;
+}
+function renderMaintenance(){
+ const m=maintenanceData(),c=m.config,x=maintenanceCalc();
+ const home=byId('maintenanceDashboardSummary');home.innerHTML=maintenanceSummaryHtml(x,true);
+ const card=byId('maintenanceStatusDetail');card.innerHTML=maintenanceSummaryHtml(x,false);
+ const pill=byId('maintenanceStatusPill');pill.textContent=maintenanceStatusText(x.status);pill.className=`badge ${maintenanceStatusClass(x.status)}`;
+ const panel=byId('maintenance');panel.dataset.status=x.status;
+ const cfg={maintenanceStartDate:c.startDate,maintenanceStartOdo:c.startOdo,maintenanceIntervalMonths:c.intervalMonths,maintenanceIntervalKm:c.intervalKm,maintenanceWarnDays:c.warnDays,maintenanceWarnKm:c.warnKm};
+ for(const [id,v] of Object.entries(cfg)){if(document.activeElement!==D[id])D[id].value=v??'';}
+ const choice=D.maintenanceRecordId.value?D.maintenanceMilestone.value:String(x.milestone||1),opts=window.T10XMaintenance.availableMilestones(c,latestOdo(),m.records);
+ D.maintenanceMilestone.innerHTML=opts.map(o=>`<option value="${o.value}">${escapeHtml(o.label)}</option>`).join('');
+ if(opts.some(o=>String(o.value)===choice))D.maintenanceMilestone.value=choice;
+ const isPeriodic=D.maintenanceRecordType.value==='periodic';D.maintenanceMilestoneWrap.hidden=!isPeriodic;D.maintenanceMilestone.disabled=!isPeriodic;
+ const records=[...m.records].sort((a,b)=>String(b.date).localeCompare(String(a.date))||String(b.id).localeCompare(String(a.id)));
+ byId('maintenanceRecordCount').textContent=`${records.length} kayıt`;
+ const kind={periodic:'Periyodik bakım',inspection:'Ara kontrol',tyres:'Lastik / rot / balans',other:'Diğer servis'};
+ byId('maintenanceHistory').innerHTML=records.length?`<div class="maintenance-history-list">${records.map(r=>{
+ const link=(r.documentUrl&&/^https:\/\//i.test(r.documentUrl))?`<a href="${escapeHtml(r.documentUrl)}" target="_blank" rel="noopener noreferrer">Belgeyi aç ↗</a>`:'';
+ return `<div class="maintenance-history-row"><div class="maintenance-history-main"><div><strong>${escapeHtml(kind[r.type]||'Servis işlemi')}${r.type==='periodic'&&r.milestone?' · '+fmt(r.milestone,0)+'. bakım':''}</strong><small>${maintenanceDate(r.date)} · ${fmt(r.odo,0)} km</small></div><span class="badge ${r.type==='periodic'?'good':'neutral'}">${r.cost===null||r.cost===''||r.cost===undefined?'Tutar bilinmiyor':fmt(r.cost,2)+' ₺'}</span></div><p class="maintenance-detail">${escapeHtml(r.serviceCenter||'Servis belirtilmedi')}${r.work?'<br>'+escapeHtml(r.work).replaceAll('\n','<br>'):''}</p>${r.notes?`<p class="maintenance-detail muted">${escapeHtml(r.notes)}</p>`:''}<div class="maintenance-history-actions">${link}<button type="button" class="link-btn" data-maintenance-edit="${escapeHtml(r.id)}">Düzenle</button><button type="button" class="link-btn maintenance-delete" data-maintenance-delete="${escapeHtml(r.id)}">Sil</button></div></div>`;
+ }).join('')}</div>`:'<div class="maintenance-empty">Henüz bakım kaydı yok. Geçmişte yaptırdığınız periyodik bakım ve diğer rutin işlemleri ekleyebilirsiniz.</div>';
+}
+function resetMaintenanceForm(){D.maintenanceRecordForm.reset();D.maintenanceRecordId.value='';D.maintenanceRecordDate.value=(()=>{const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;})();D.maintenanceRecordFormTitle.textContent='Geçmiş / Yeni Bakım Kaydı';D.maintenanceRecordSubmit.textContent='Bakımı Kaydet';D.maintenanceRecordFeedback.textContent='';renderMaintenance();}
+function editMaintenance(id){const r=maintenanceData().records.find(x=>x.id===id);if(!r)return;
+ D.maintenanceRecordId.value=r.id;D.maintenanceRecordType.value=r.type||'other';renderMaintenance();D.maintenanceMilestone.value=String(r.milestone||1);
+ for(const [k,v] of Object.entries({maintenanceRecordDate:r.date,maintenanceRecordOdo:r.odo,maintenanceServiceCenter:r.serviceCenter,maintenanceWork:r.work,maintenanceCost:r.cost,maintenanceAdviceDate:r.nextAdviceDate,maintenanceAdviceOdo:r.nextAdviceOdo,maintenanceDocumentUrl:r.documentUrl,maintenanceNotes:r.notes}))D[k].value=v??'';
+ D.maintenanceRecordFormTitle.textContent='Bakım Kaydını Düzenle';D.maintenanceRecordSubmit.textContent='Değişiklikleri Kaydet';D.maintenanceRecordFeedback.textContent='Kayıt düzenleniyor; değişiklikler kaydedilene kadar geçerli olmaz.';
+ showTab('maintenance');D.maintenanceRecordForm.scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+function renderAll(){renderMaintenance();renderDashboard();renderCharges();renderConsumptionSnapshots();renderTrips();renderSoh();renderAnalytics();renderStress();renderSettings();updateSohPreview();updateChargePreview();renderCrate();renderPlanner()}
 
 D.chargeForm.addEventListener('submit',e=>{
   e.preventDefault();const id=D.chargeId.value||uid(),odoUnknown=!!D.chargeOdoUnknown.checked;
@@ -1161,6 +1207,40 @@ window.deleteSocSnapshot=id=>{
   }else db.socSnapshots=db.socSnapshots.filter(x=>x.id!==id);
   save();
 };
+
+
+// Maintenance UI / actions (all writes use the same save() and Firebase path).
+D.maintenanceConfigForm.addEventListener('submit',e=>{
+ e.preventDefault();const c={startDate:D.maintenanceStartDate.value,startOdo:Number(D.maintenanceStartOdo.value),intervalMonths:Number(D.maintenanceIntervalMonths.value),intervalKm:Number(D.maintenanceIntervalKm.value),warnDays:Number(D.maintenanceWarnDays.value),warnKm:Number(D.maintenanceWarnKm.value)};
+ const errors=window.T10XMaintenance.validateConfig(c);if(errors.length){D.maintenanceConfigFeedback.textContent=errors.join(' ');return;}
+ if(db.maintenance.records.some(r=>r.type==='periodic')&&(c.startDate!==db.maintenance.config.startDate||c.intervalMonths!==db.maintenance.config.intervalMonths||c.intervalKm!==db.maintenance.config.intervalKm)){
+  if(!confirm('Bakım takviminin başlangıcı veya aralığı değişiyor. Önceden kaydedilmiş bakım numaralarının tarih/km eşikleri de değişecektir. Devam edilsin mi?'))return;
+ }
+ db.maintenance.config=c;save();D.maintenanceConfigFeedback.textContent='Bakım takvimi kaydedildi; Dashboard güncellendi.';
+});
+D.maintenanceRecordType.addEventListener('change',()=>{renderMaintenance();});
+D.maintenanceRecordForm.addEventListener('submit',e=>{
+ e.preventDefault();const id=D.maintenanceRecordId.value||uid(),type=D.maintenanceRecordType.value,date=D.maintenanceRecordDate.value,odo=Number(D.maintenanceRecordOdo.value),mile=type==='periodic'?Number(D.maintenanceMilestone.value):null;
+ if(!window.T10XMaintenance.validDate(date)||!Number.isInteger(odo)||odo<0){D.maintenanceRecordFeedback.textContent='Geçerli tarih ve kilometre girin.';return;}
+ if(type==='periodic'&&(!Number.isInteger(mile)||mile<1||mile>99)){D.maintenanceRecordFeedback.textContent='Periyodik bakım numarasını seçin.';return;}
+ if(type==='periodic'&&db.maintenance.records.some(r=>r.id!==id&&r.type==='periodic'&&Number(r.milestone)===mile)){D.maintenanceRecordFeedback.textContent=`${mile}. periyodik bakım için bir kayıt zaten var. Mevcut kaydı düzenleyin.`;return;}
+ if(D.maintenanceAdviceDate.value&&!window.T10XMaintenance.validDate(D.maintenanceAdviceDate.value)){D.maintenanceRecordFeedback.textContent='Servis öneri tarihini kontrol edin.';return;}
+ const cost=D.maintenanceCost.value===''?null:Number(D.maintenanceCost.value),nextAdviceOdo=D.maintenanceAdviceOdo.value===''?null:Number(D.maintenanceAdviceOdo.value);
+ if(cost!==null&&(!(cost>=0)||!Number.isFinite(cost))||nextAdviceOdo!==null&&(!Number.isInteger(nextAdviceOdo)||nextAdviceOdo<0)){D.maintenanceRecordFeedback.textContent='Tutar veya sonraki km geçersiz.';return;}
+ let documentUrl=D.maintenanceDocumentUrl.value.trim();if(documentUrl){try{const u=new URL(documentUrl);if(u.protocol!=='https:')throw Error('https');documentUrl=u.href;}catch{D.maintenanceRecordFeedback.textContent='Belge bağlantısı geçerli bir https adresi olmalı.';return;}}
+ const record={id,type,milestone:mile,date,odo,serviceCenter:D.maintenanceServiceCenter.value.trim(),work:D.maintenanceWork.value.trim(),cost,documentUrl,nextAdviceDate:D.maintenanceAdviceDate.value||null,nextAdviceOdo,notes:D.maintenanceNotes.value.trim()};
+ const idx=db.maintenance.records.findIndex(r=>r.id===id);idx>=0?db.maintenance.records[idx]=record:db.maintenance.records.push(record);
+ save();resetMaintenanceForm();D.maintenanceRecordFeedback.textContent='Bakım kaydı kaydedildi; takip eşikleri güncellendi.';
+});
+D.maintenanceRecordReset.addEventListener('click',resetMaintenanceForm);
+byId('maintenanceHistory').addEventListener('click',e=>{
+ const edit=e.target.closest('[data-maintenance-edit]');if(edit)return editMaintenance(edit.dataset.maintenanceEdit);
+ const del=e.target.closest('[data-maintenance-delete]');if(del){const id=del.dataset.maintenanceDelete,record=db.maintenance.records.find(r=>r.id===id);if(!record)return;
+  if(!confirm(`${record.date} tarihli bakım kaydı silinsin mi? Bu, sonraki bakım zamanını yeniden hesaplayacaktır.`))return;
+  db.maintenance.records=db.maintenance.records.filter(r=>r.id!==id);save();resetMaintenanceForm();
+ }
+});
+D.maintenanceExportCsv.addEventListener('click',()=>exportCsv('t10x_bakim_kayitlari.csv',['Tarih','Kilometre','Tur','Bakim No','Servis','Islemler','Tutar TL','Sonraki Tarih','Sonraki Km','Belge URL','Not'],maintenanceData().records.map(r=>[r.date,r.odo,r.type,r.milestone,r.serviceCenter,r.work,r.cost,r.nextAdviceDate,r.nextAdviceOdo,r.documentUrl,r.notes])));
 
 D.settingsForm.addEventListener('submit',e=>{
   e.preventDefault();
@@ -1323,7 +1403,7 @@ D.exportTripsCsv.onclick=()=>exportCsv('surus_kayitlari.csv',['Tarih','Mesafe km
 D.exportDriveSessionsCsv.onclick=()=>exportCsv('surus_park_zaman_kayitlari.csv',['Baslangic','Bitis','Baslangic km','Bitis km','Baslangic SOC','Bitis SOC','Mesafe km','Tuketim kWh/100 km','Tam kayit'],db.driveSessions.map(x=>[x.startAt,x.endAt,x.startOdo,x.endOdo,x.startSoc,x.endSoc,x.distance,x.consumption,x.complete?'Evet':'Hayir']));
 
 function setDefaultDateTimes(){const now=new Date();const local=new Date(now.getTime()-now.getTimezoneOffset()*60000).toISOString().slice(0,16);if(!D.chargeDate.value)D.chargeDate.value=local;if(!D.consumptionDate.value)D.consumptionDate.value=local;if(!D.tripDate.value)D.tripDate.value=now.toISOString().slice(0,10);if(!D.sohDate.value)D.sohDate.value=now.toISOString().slice(0,10);if(D.plannerDeparture&&!D.plannerDeparture.value){const dep=new Date(now);dep.setDate(dep.getDate()+1);dep.setHours(7,30,0,0);D.plannerDeparture.value=new Date(dep.getTime()-dep.getTimezoneOffset()*60000).toISOString().slice(0,16)}}
-setDefaultDateTimes();updateSohMethod();if(!D.consumptionOdo.value)D.consumptionOdo.value=db.settings.currentOdo||'';renderAll();
+setDefaultDateTimes();if(D.maintenanceRecordDate)D.maintenanceRecordDate.value=(()=>{const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;})();updateSohMethod();if(!D.consumptionOdo.value)D.consumptionOdo.value=db.settings.currentOdo||'';renderAll();
 
 
 // v0.9.1 - glossary search/filter

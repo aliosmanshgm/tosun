@@ -9,7 +9,7 @@
   <meta name="apple-mobile-web-app-title" content="T10X Batarya" />
   <meta name="mobile-web-app-capable" content="yes" />
   <link rel="manifest" href="manifest.webmanifest" />
-  <title>T10X Araç & Batarya Takip v0.10.0 · Kolay Günlük Kayıt</title>
+  <title>T10X Araç & Batarya Takip v0.11.0 · Periyodik Bakım</title>
   <link rel="stylesheet" href="app.css" />
 </head>
 <body>
@@ -48,6 +48,7 @@
   <nav class="tabs" aria-label="Ana bölümler">
     <button class="tab active" data-tab="dashboard">Gösterge Paneli</button>
     <button class="tab" data-tab="charges">Şarj Kayıtları</button>
+    <button class="tab" data-tab="maintenance">Periyodik Bakım</button>
     <button class="tab" data-tab="trips">Tüketim / Sürüş</button>
     <button class="tab" data-tab="planner">Şarj Planlayıcı</button>
     <button class="tab" data-tab="soh">SOH Testleri</button>
@@ -72,6 +73,10 @@
         </div>
         <div class="cockpit-source-line"><span><i></i> Kayıtlı bilgiler</span><span id="cockpitLastUpdate">Son giriş: —</span><span>OBD verisi bağlı değil</span></div>
       </section>
+      <article class="card maintenance-dashboard-card" aria-label="Bakım durumu">
+        <div class="card-head"><div><span class="cockpit-eyebrow">ARAÇ TAKVİMİ</span><h2>Periyodik Bakım</h2></div><button type="button" class="secondary" id="goMaintenance" data-goto="maintenance">Bakımları yönet</button></div>
+        <div id="maintenanceDashboardSummary" aria-live="polite"></div>
+      </article>
       <article class="card range-dashboard-card" id="rangeDashboard" aria-live="polite"></article>
       <article class="card seasonal-dashboard-card" id="seasonalRangeDashboard" aria-live="polite"></article>
       <div class="grid two">
@@ -186,6 +191,55 @@
         </form>
         <div class="table-wrap"><table><thead><tr><th>Tarih</th><th>Km</th><th>Son Şarjdan Beri</th><th>Not</th><th></th></tr></thead><tbody id="consumptionTable"></tbody></table></div>
       </details>
+    </section>
+
+    <section id="maintenance" class="panel maintenance-panel">
+      <div class="section-title"><div><h2>Periyodik Bakım Yönetimi</h2><p>Bakım başlangıcı, 2 yıl / 40.000 km takvimi, geçmiş işlemler ve yaklaşan kilometre/tarih sınırları.</p></div><div class="section-actions"><button type="button" class="secondary" id="maintenanceExportCsv">Bakım CSV İndir</button></div></div>
+      <div class="info-box"><strong>Takvim kuralı:</strong> Başlangıç tarihi + 24 ay <em>veya</em> başlangıç km + 40.000 km, <strong>hangisi önce gelirse</strong>. Sonraki bakım 48 ay / 80.000 km olarak devam eder. Erken yapılan bakım takvimi kendiliğinden sıfırlamaz. Bu varsayılanı aracınızın servis/bakım belgesiyle doğrulayın. <strong>Garantiler ve arıza takibi sonraki fazlarda.</strong></div>
+      <article class="card maintenance-summary-card">
+        <div class="card-head"><h2>Bakım durumu ve bir sonraki eşik</h2><span id="maintenanceStatusPill" class="badge neutral">Kurulum bekleniyor</span></div>
+        <div id="maintenanceStatusDetail" aria-live="polite"></div>
+      </article>
+      <div class="grid two maintenance-forms">
+        <form id="maintenanceConfigForm" class="form-card">
+          <h2>Bakım Takvimini Başlat</h2>
+          <p class="muted">İlk tescil / bakım takvimi başlangıcını belgeye göre girin. Sahiplik başlangıcı ile karıştırmayın.</p>
+          <div class="form-grid maintenance-form-grid">
+            <label>İlk tescil / bakım başlangıcı <input id="maintenanceStartDate" type="date" required></label>
+            <label>Başlangıç kilometresi <input id="maintenanceStartOdo" type="number" min="0" step="1" required></label>
+            <label>Bakım aralığı (ay) <input id="maintenanceIntervalMonths" type="number" min="1" max="120" step="1" required></label>
+            <label>Bakım aralığı (km) <input id="maintenanceIntervalKm" type="number" min="1000" max="200000" step="1000" required></label>
+            <label>Erken uyarı (gün kala) <input id="maintenanceWarnDays" type="number" min="0" max="365" step="1" required></label>
+            <label>Erken uyarı (km kala) <input id="maintenanceWarnKm" type="number" min="0" max="20000" step="100" required></label>
+          </div>
+          <div class="form-actions"><button type="submit">Takvimi Kaydet</button></div>
+          <p id="maintenanceConfigFeedback" class="maintenance-feedback" role="status" aria-live="polite"></p>
+        </form>
+        <form id="maintenanceRecordForm" class="form-card">
+          <h2 id="maintenanceRecordFormTitle">Geçmiş / Yeni Bakım Kaydı</h2>
+          <input type="hidden" id="maintenanceRecordId">
+          <div class="form-grid maintenance-form-grid">
+            <label>İşlem türü<select id="maintenanceRecordType"><option value="periodic">Periyodik bakım</option><option value="inspection">Ara kontrol / rutin kontrol</option><option value="tyres">Lastik / rot / balans</option><option value="other">Diğer servis işlemi</option></select></label>
+            <label id="maintenanceMilestoneWrap">Hangi periyodik bakım?<select id="maintenanceMilestone"></select></label>
+            <label>İşlem tarihi <input id="maintenanceRecordDate" type="date" required></label>
+            <label>İşlem kilometresi <input id="maintenanceRecordOdo" type="number" min="0" step="1" required></label>
+            <label class="span-2">Yetkili servis / işlem yeri <input id="maintenanceServiceCenter" maxlength="160" type="text" placeholder="Örn. Ankara Togg Yetkili Servis"></label>
+            <label class="span-2">Yapılan işlemler / kontroller <textarea id="maintenanceWork" maxlength="4000" rows="2" placeholder="Örn. Genel kontrol, filtre, fren, yazılım kontrolü..."></textarea></label>
+            <label>Ödenen tutar (₺) · isteğe bağlı <input id="maintenanceCost" type="number" min="0" step="0.01" placeholder="Boş = bilinmiyor"></label>
+            <label>Servisin bildirdiği sonraki tarih <input id="maintenanceAdviceDate" type="date"></label>
+            <label>Servisin bildirdiği sonraki km <input id="maintenanceAdviceOdo" type="number" min="0" step="1" placeholder="Varsa"></label>
+            <label class="span-2">Belge bağlantısı · isteğe bağlı <input id="maintenanceDocumentUrl" type="url" placeholder="https://drive.google.com/... (erişimi kısıtlı)"></label>
+            <label class="span-2">Notlar <textarea id="maintenanceNotes" maxlength="4000" rows="2" placeholder="İş emri no, gözlemler, sonraki takip... "></textarea></label>
+          </div>
+          <p class="muted">Bu fazda servis işlemleri serbest metin olarak saklanır. Arıza/parça değişimi, tekrar analizi ve garanti eşleştirmesi ileride ayrı kayıt modeliyle eklenecek.</p>
+          <div class="form-actions"><button type="submit" id="maintenanceRecordSubmit">Bakımı Kaydet</button><button type="button" class="secondary" id="maintenanceRecordReset">Temizle</button></div>
+          <p id="maintenanceRecordFeedback" class="maintenance-feedback" role="status" aria-live="polite"></p>
+        </form>
+      </div>
+      <article class="card maintenance-history-card">
+        <div class="card-head"><div><h2>Bakım ve rutin işlem geçmişi</h2><p class="muted">İlk kurulumda eski bakım belgelerinizi de girebilirsiniz. Bir kayıt bir kez sayılır.</p></div><span class="badge neutral" id="maintenanceRecordCount">0 kayıt</span></div>
+        <div id="maintenanceHistory" aria-live="polite"></div>
+      </article>
     </section>
 
     <section id="charges" class="panel">
@@ -681,7 +735,7 @@
     </section>
   </main>
 
-  <footer>v0.10.0 · Kolay Günlük Kayıt + Mevsimsel Menzil · Engineer Edition · Tek kullanıcı giriş kapısı · Firebase Sync · GitHub Pages · iPhone uyumlu · km/SOC eksik geçmiş kayıt desteği · süre→ortalama güç/C-rate</footer>
+  <footer>v0.11.0 · Periyodik Bakım Yönetimi + Kolay Günlük Kayıt · Engineer Edition · Tek kullanıcı giriş kapısı · Firebase Sync · GitHub Pages · iPhone uyumlu · km/SOC eksik geçmiş kayıt desteği · süre→ortalama güç/C-rate</footer>
   </div>
 
   <script src="weather.js"></script>
@@ -690,6 +744,7 @@
   <script src="soh-model.js"></script>
   <script src="range-model.js"></script>
   <script src="seasonal-range.js"></script>
+  <script src="maintenance-model.js"></script>
   <script src="app.js"></script>
   <script type="module" src="firebase-sync.js"></script>
   <script>

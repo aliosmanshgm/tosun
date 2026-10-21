@@ -1,3 +1,44 @@
+# v0.11.0 · Faz 2 Kurulum ve İlk Kullanım
+
+## v0.11.0 · Faz 2 — Periyodik Bakım Yönetimi
+
+**ÖNCEKİ DOSYALARIN TÜMÜ + `maintenance-model.js`** GitHub Pages köküne yüklenmelidir. Firebase tek kullanıcı UID ve Realtime Database Rules değiştirilmez. Önce JSON yedeği alın.
+
+### İlk kurulum
+
+1. **Periyodik Bakım** menüsünü açın.
+2. İlk tescil/bakım başlangıç tarihini **aracınızın belgelediği gerçek tarihe** göre girin. Bu, ikinci el satın alma tarihiniz olmayabilir; uygulama tarih uydurmaz.
+3. Başlangıç kilometresi varsayılan 0 km'dir. Belgeye göre güncellenebilir.
+4. Varsayılan bakım aralığı 24 ay veya 40.000 km, hangisi önce ise. Aracınızın üretici/servis dokümanındaki gerçek koşulu doğrulayın. Uyarılar varsayılan 90 gün ve 3.000 km kala görünür.
+5. Daha önce tamamlanan **periyodik bakımları** 1., 2. ... olarak geçmiş tarihler ve km ile girin. Böylece sıradaki bakım hesabına geçilir. Lastik, ara kontrol ve diğer servis işlemleri otomatik sıradaki bakıma sayılmaz.
+6. Bakım sonrası servis tarafından verilen bir sonraki tarih/km bilgisi varsa ilgili kayıt altında ayrıca kaydedin. Bu veri ana takvimi otomatik uzatmaz veya kısaltmaz; karşılaştırma amaçlı gösterilir.
+7. İsteğe bağlı Drive belge bağlantısını ekleyin. Belgeler GitHub reposuna yüklenmez; erişim izinlerini kendiniz kısıtlayın.
+
+### Yeni özellikler
+
+- Dashboard'da **bir sonraki bakım**: kilometre taşı, son tarih, km sınırı, kalan gün/km, durum.
+- Yeni **Periyodik Bakım** sekmesi: başlangıç takvimi, zaman/km uyarı eşikleri, geçmiş bakım ve rutin servis işlemleri, notlar, harcama, servis, özel öneri, belge bağlantısı.
+- Kayıt **ekle / düzenle / sil** ve **CSV indir**. Eski veriler korunur.
+- 1. bakım erken yapılsa dahi 2. bakım üretici-referanslı sabit takvimde 48 ay / 80.000 km olarak hesaplanır. Erken servis yeni bir 'sıfır noktası' değildir.
+- Bakım zamanı: tarihin dolması **veya** kilometre sınırına ulaşılması. Tarih ya da km tek başına eşik olabilir.
+- Model bellekte `maintenance.config` ve `maintenance.records` altında tutulur, Firebase JSON içerisinde otomatik senkronize edilir.
+- Şema v16; localStorage v15. Önceki local v14 ve eski Firebase/JSON yapıları veri kaybı olmadan okunur.
+
+### Sınırlar
+
+- Servis fişi ve üretici bakım planı esas alınmalıdır. Uygulama garanti uygunluğu veya servis performansını doğrulamaz.
+- Uygulama kapalıyken planlı e-posta / push göndermez; uyarılar Dashboard açıldığında güncellenir.
+- Fabrika garantisi, batarya garantisi, garanti uzatması, açık servis dosyası, arıza ve parça tekrar analizi **Faz 3–4** kapsamındadır, Faz 2 kapsamında değildir.
+- Kayıt işlemleri lokal Chromium ve birim testlerinde doğrulandı; gerçek Firebase oturumu ve iPhone Safari canlı ortamında ayrıca doğrulanmalıdır.
+
+### Kontrol
+
+`node tests/maintenance-model.test.js`
+
+Ardından var olan diğer `tests/*.test.js` dosyalarıyla hesaplama regresyon testi çalıştırılabilir.
+
+---
+
 # Firebase + GitHub Pages Kurulum Kontrol Listesi — v0.9.9
 
 ## 1. Tamamlananlar
