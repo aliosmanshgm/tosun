@@ -1,3 +1,33 @@
+# T10X Araç & Batarya Takip v0.14.0 — Faz 5: Belge, Rapor, Hatırlatma
+
+**Bu dosya ve ZIP klasörü v0.14.0 güncel sürümüdür.** Önceki README geçmişi aşağıda korunmaktadır.
+
+## Faz 5 yenilikleri
+
+- **Belgeler:** Servis iş emri, fatura, poliçe, garanti, bakım ve arıza fotoğrafı için merkezi arşiv. Belgeyi ilgili `maintenance`, `visit`, `issue`, `action`, `insurance`, `extension`, `vehicle_warranty`, `battery_warranty` kayıtlarına bağlar. Bir kayda birden çok belge eklenebilir. Kaydetme, düzenleme, silme, arama ve CSV. Eski form alanlarındaki belge URL'leri isteğe bağlı **Eski belge bağlantılarını içe al** düğmesiyle indekslenebilir; orijinal kayıtlar silinmez.
+- **Google Drive entegrasyonu (isteğe bağlı):** Doğrudan istemciden Google Drive'a PDF/JPG/PNG (azami 10 MB) yükleme. Yalnız `drive.file` kapsamlı kullanıcı yetkisi; Google OAuth Web Client ID ve Google Drive API kurulumu gerektirir. `GOOGLE_DRIVE_KURULUM.md` okunmalıdır. İstemci kimliği yalnız yerel cihazda saklanır, token Firebase'e yazılmaz. Gerçek Google OAuth bağlantısı geliştirme ortamında test edilmemiştir.
+- **Servis Raporları:** Yıl filtresi; ziyaret, arıza, müdahale, tekrar eden parça, servis merkezleri, açık vakalar, teminat kararları. Servis ziyaretinin toplam maliyeti ile işlemlerin maliyeti **toplanmaz** (mükerrerlik riski). CSV ve tarayıcı Yazdır/PDF desteği.
+- **Hatırlatmalar:** Bakım, araç/batarya garantisi, sigorta/kasko, ek teminat için tarih/km özeti ve Dashboard uyarıları. Gün ön uyarıları özelleştirilebilir. iPhone/Google/Outlook takvimine `.ics` dışa aktarımı (takvim kullanıcının içe aktarma ve bildirim iznine bağlı). Km-only uyarıları takvim alarmı değil uygulama içi kontrol olarak kalır. **Uygulama kapalıyken kendi sunucusundan e-posta/push göndermez.**
+- **Şema 19, localStorage v19:** v0.13 / eski v16 local verileri ve Firebase kayıtları korunur; yeni `phase5.documents` + `phase5.preferences` eklenir. Tek kullanıcı Firebase kuralları değişmez. Önce JSON yedeği alın.
+- **Yeni dosyalar:** `phase5-model.js`, `phase5-ui.js`, `GOOGLE_DRIVE_KURULUM.md`, `FAZ5_KULLANIM.md`. `index.html`, `app.js`, `app.css`, `sw.js` birlikte yenilenir.
+
+### Kurulum
+
+1. Mevcut v0.13.0 uygulamasında **JSON Yedekle** işlemi yapın.
+2. ZIP içindeki `t10x_arac_batarya_v0.14.0` klasörünün *içindeki bütün dosyaları* GitHub Pages `main` köküne yükleyin.
+3. Firebase'e normal giriş yapın; Belgeler, Servis Raporları, Hatırlatmalar menülerini kontrol edin.
+4. Eski Drive belge URL'lerini kullanıyorsanız Belgeler sayfasındaki **Eski belge bağlantılarını içe al** işlemini çalıştırın. Drive'a dosya yüklemek isterseniz ayrı kurulum yönergesini izleyin.
+5. Hatırlatmalar sayfasından `.ics` dosyasını indirip takvim uygulamanıza içe aktarın. Belge ve poliçe değişikliklerinde takvim dosyasını yeniden oluşturun.
+
+### Test kapsamı
+
+- `node tests/phase5-model.test.js` — 10 senaryo.
+- `python tests/phase5-ui-browser.py` — Chromium izole dosya testi, belge ekleme/düzenleme, rapor ve ICS dışa aktarımı.
+- `tests/*.test.js` — önceki model regresyonları.
+- Gerçek Firebase Authentication, Google OAuth/Drive upload ve iPhone Safari canlı ortamında ayrıca kullanıcı testi gereklidir.
+
+---
+
 # T10X Araç & Batarya Takip v0.12.0 — Faz 2: Periyodik Bakım Yönetimi
 
 Kişisel T10X (88,5 kWh NMC) kullanımı için local-first + Firebase senkronizasyonlu, iPhone/PWA uyumlu batarya ve şarj takip uygulaması.

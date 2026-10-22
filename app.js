@@ -1,5 +1,5 @@
-const STORAGE_KEY='t10xBatteryTracker_v16';
-const LEGACY_KEYS=['t10xBatteryTracker_v15','t10xBatteryTracker_v14','t10xBatteryTracker_v13','t10xBatteryTracker_v12','t10xBatteryTracker_v11','t10xBatteryTracker_v10','t10xBatteryTracker_v9','t10xBatteryTracker_v8','t10xBatteryTracker_v6','t10xBatteryTracker_v5','t10xBatteryTracker_v4','t10xBatteryTracker_v3','t10xBatteryTracker_v2','t10xBatteryTracker_v1'];
+const STORAGE_KEY='t10xBatteryTracker_v19';
+const LEGACY_KEYS=['t10xBatteryTracker_v16','t10xBatteryTracker_v18','t10xBatteryTracker_v17','t10xBatteryTracker_v15','t10xBatteryTracker_v14','t10xBatteryTracker_v13','t10xBatteryTracker_v12','t10xBatteryTracker_v11','t10xBatteryTracker_v10','t10xBatteryTracker_v9','t10xBatteryTracker_v8','t10xBatteryTracker_v6','t10xBatteryTracker_v5','t10xBatteryTracker_v4','t10xBatteryTracker_v3','t10xBatteryTracker_v2','t10xBatteryTracker_v1'];
 const DEFAULT_PROVIDERS=[
   "ZES Şarj",
   "Trugo Şarj",
@@ -163,7 +163,7 @@ const DEFAULT_PROVIDERS=[
   "Ev / Kendi AC Şarjım"
 ];
 const defaults={
-  meta:{schemaVersion:18,updatedAt:''},
+  meta:{schemaVersion:19,updatedAt:''},
   settings:{
     vehicleName:'T10X Uzun Menzil',batteryChemistry:'NMC',ownershipStartOdo:32356,ownershipStartSoc:59,ownershipStartDate:'',trackingStartOdo:33537,currentOdo:33537,currentSoc:76,
     referenceCapacity:88.5,wltpRangeKm:523,preferredMinSoc:20,preferredMaxSoc:80,
@@ -173,7 +173,8 @@ const defaults={
   charges:[],trips:[],consumptionSnapshots:[],sohTests:[],socSnapshots:[],driveSessions:[],activeDrive:null,
   maintenance:{config:{...window.T10XMaintenance.DEFAULT_CONFIG},records:[]},
   coverage:window.T10XCoverage.defaultData(),
-  service:window.T10XService.defaultData()
+  service:window.T10XService.defaultData(),
+  phase5:window.T10XPhase5.defaultData()
 };
 
 let db=load();
@@ -194,7 +195,7 @@ const D=Object.fromEntries(domIds.map(id=>[id,byId(id)]));
 
 function migrate(obj){
   const out={...structuredClone(defaults),...(obj||{})};
-  out.meta={...structuredClone(defaults.meta),...(obj?.meta||{}),schemaVersion:18};
+  out.meta={...structuredClone(defaults.meta),...(obj?.meta||{}),schemaVersion:19};
   out.settings={...structuredClone(defaults.settings),...(obj?.settings||{})};
   delete out.settings.targetDcShare;delete out.settings.balanceWindow;
   if(obj?.settings&&obj.settings.ownershipStartSoc==null){
@@ -212,6 +213,7 @@ function migrate(obj){
   out.maintenance={config:window.T10XMaintenance.normalizeConfig(obj?.maintenance?.config||{}),records:Array.isArray(obj?.maintenance?.records)?obj.maintenance.records.map(x=>({...x})):[]};
   out.coverage=window.T10XCoverage.normalize(obj?.coverage);
   out.service=window.T10XService.normalize(obj?.service);
+  out.phase5=window.T10XPhase5.normalize(obj?.phase5);
   out.activeDrive=(obj?.activeDrive&&Number.isFinite(new Date(obj.activeDrive.startAt).getTime()))?obj.activeDrive:null;
   return out;
 }
@@ -223,14 +225,14 @@ function load(){
   }catch{return structuredClone(defaults)}
 }
 function persistLocal({emit=false}={}){localStorage.setItem(STORAGE_KEY,JSON.stringify(db));renderAll();if(emit)window.dispatchEvent(new CustomEvent('t10x:data-changed',{detail:{db:structuredClone(db)}}));}
-function save(){db.meta={...(db.meta||{}),schemaVersion:18,updatedAt:new Date().toISOString()};persistLocal({emit:true})}
+function save(){db.meta={...(db.meta||{}),schemaVersion:19,updatedAt:new Date().toISOString()};persistLocal({emit:true})}
 
 window.T10XApp={
   getData:()=>structuredClone(db),
   replaceData:(next,{emit=false}={})=>{db=migrate(next||{});persistLocal({emit});return structuredClone(db)},
-  hasMeaningfulData:()=>Boolean(db.charges.length||db.trips.length||db.consumptionSnapshots.length||db.sohTests.length||db.socSnapshots.length||db.driveSessions.length||!!db.activeDrive||db.maintenance?.records?.length||db.maintenance?.config?.startDate||db.coverage?.policies?.length||db.coverage?.extensions?.length||db.coverage?.warranties?.vehicle?.startDate||db.coverage?.warranties?.battery?.startDate||db.service?.visits?.length||db.service?.issues?.length||db.service?.actions?.length||db.service?.components?.length||db.meta?.updatedAt),
+  hasMeaningfulData:()=>Boolean(db.charges.length||db.trips.length||db.consumptionSnapshots.length||db.sohTests.length||db.socSnapshots.length||db.driveSessions.length||!!db.activeDrive||db.maintenance?.records?.length||db.maintenance?.config?.startDate||db.coverage?.policies?.length||db.coverage?.extensions?.length||db.coverage?.warranties?.vehicle?.startDate||db.coverage?.warranties?.battery?.startDate||db.service?.visits?.length||db.service?.issues?.length||db.service?.actions?.length||db.service?.components?.length||db.phase5?.documents?.length||db.meta?.updatedAt),
   storageKey:STORAGE_KEY,
-  schemaVersion:18
+  schemaVersion:19
 };
 
 function uid(){return crypto.randomUUID?crypto.randomUUID():String(Date.now()+Math.random())}
@@ -1275,7 +1277,7 @@ function initServiceListeners(){
  for(const type of ['component','visit','issue','action'])clearService(type);
 }
 
-function renderAll(){renderMaintenance();renderCoverage();renderService();renderDashboard();renderCharges();renderConsumptionSnapshots();renderTrips();renderSoh();renderAnalytics();renderStress();renderSettings();updateSohPreview();updateChargePreview();renderCrate();renderPlanner()}
+function renderAll(){renderMaintenance();renderCoverage();renderService();renderDashboard();renderCharges();renderConsumptionSnapshots();renderTrips();renderSoh();renderAnalytics();renderStress();renderSettings();updateSohPreview();updateChargePreview();renderCrate();renderPlanner();window.T10XPhase5UI?.render()}
 
 D.chargeForm.addEventListener('submit',e=>{
   e.preventDefault();const id=D.chargeId.value||uid(),odoUnknown=!!D.chargeOdoUnknown.checked;

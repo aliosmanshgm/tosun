@@ -52,6 +52,9 @@
     <button class="tab" data-tab="warranty">Garantiler & Uzatmalar</button>
     <button class="tab" data-tab="insurance">Sigorta & Kasko</button>
     <button class="tab" data-tab="service">Servis & Arızalar</button>
+    <button class="tab" data-tab="documents">Belgeler</button>
+    <button class="tab" data-tab="reports">Servis Raporları</button>
+    <button class="tab" data-tab="reminders">Hatırlatmalar</button>
     <button class="tab" data-tab="trips">Tüketim / Sürüş</button>
     <button class="tab" data-tab="planner">Şarj Planlayıcı</button>
     <button class="tab" data-tab="soh">SOH Testleri</button>
@@ -85,6 +88,7 @@
         <article class="card coverage-dashboard-card"><div class="card-head"><h2>Trafik Sigortası & Kasko</h2><button type="button" class="link-btn" data-goto="insurance">Poliçeleri aç</button></div><div id="insuranceDashboard" aria-live="polite"></div></article>
       </div>
       <article class="card service-dashboard-card"><div class="card-head"><h2>Servis & Arıza Takibi</h2><button type="button" class="link-btn" data-goto="service">Servis kayıtlarını aç</button></div><div id="serviceDashboard" aria-live="polite"></div></article>
+      <article class="card phase5-home"><div class="card-head"><h2>Yaklaşan işler ve hatırlatmalar</h2><button type="button" class="secondary" data-goto="reminders">Tümünü aç</button></div><div id="phase5Dashboard"></div></article>
       <article class="card range-dashboard-card" id="rangeDashboard" aria-live="polite"></article>
       <article class="card seasonal-dashboard-card" id="seasonalRangeDashboard" aria-live="polite"></article>
       <div class="grid two">
@@ -883,6 +887,49 @@
       <div class="info-box"><strong>Bilimsel sınır:</strong> Literatür “iki DC'den sonra üç AC” gibi bir zorunluluk tanımlamaz. v0.9 ile bu davranış kaldırılmıştır. Öneriler artık C-rate, SOC penceresi, SOC×zaman, gerçek/temsili termal durum ve planlanan enerji ihtiyacına dayanır.</div>
     </section>
 
+
+    <section id="documents" class="panel">
+      <div class="section-title"><div><h2>Belgeler ve Kanıtlar</h2><p>İş emri, servis raporu, fatura, poliçe, garanti ve fotoğrafları ilgili kayıtla ilişkilendirin. Dosyanın kendisi Firebase'de saklanmaz.</p></div></div>
+      <article class="card"><div class="card-head"><h2>Belge Ekle / Düzenle</h2><span id="docCount" class="badge neutral">0 belge</span></div>
+        <form id="p5DocumentForm"><input type="hidden" id="p5DocId"><div class="form-grid">
+          <label>Belge adı<input id="p5DocName" type="text" maxlength="160" required placeholder="Örn. Ön kamera değişimi iş emri"></label>
+          <label>Belge türü<select id="p5DocKind"></select></label>
+          <label>İlişkili kayıt<select id="p5DocLink"></select></label>
+          <label>Belge tarihi<input id="p5DocDate" type="date"></label>
+          <label class="span-2">Drive veya diğer özel depolama HTTPS bağlantısı<input id="p5DocUrl" type="url" placeholder="https://drive.google.com/..."></label>
+          <label class="span-2">Açıklama<textarea id="p5DocNotes" rows="2" maxlength="2500"></textarea></label>
+        </div>
+        <div class="form-actions"><button type="submit" id="p5DocSave">Belge Referansını Kaydet</button><button type="button" id="p5DocCancel" class="secondary">Temizle</button></div>
+        <p class="muted">Belge yalnızca sizin erişiminize açık kalabilir. Firebase'e sadece belge bağlantısı ve açıklaması kaydedilir. Belgeleri GitHub'a yüklemeyin.</p><p id="p5DocFeedback" class="muted" aria-live="polite"></p>
+        </form></article>
+      <article class="card phase5-drive"><div class="card-head"><h2>İsteğe bağlı Google Drive yükleme</h2><span class="badge neutral">Google hesabı gerekir</span></div>
+        <p class="muted">Uygulama doğrudan kendi Google hesabınıza, sınırlı <code>drive.file</code> izniyle dosya yükleyebilir. Bu özellik için bir defalık OAuth istemci kimliği ve Drive API kurulumu gerekir. Şifre veya servis hesabı anahtarı istenmez; dosya Firebase'e gönderilmez.</p>
+        <div class="form-grid"><label class="span-2">Google OAuth Web Client ID<input id="p5GoogleClientId" type="text" placeholder="...apps.googleusercontent.com" autocomplete="off"></label><label class="span-2">Yüklenecek belge (PDF, JPG veya PNG; en fazla 10 MB)<input type="file" id="p5UploadFile" accept="application/pdf,image/jpeg,image/png"></label></div>
+        <div class="form-actions"><button type="button" id="p5DriveUpload">Dosyayı Özel Drive'ıma Yükle</button><button type="button" id="p5DriveSignOut" class="secondary">Google Bağlantısını Kes</button></div><p id="p5DriveFeedback" class="muted" aria-live="polite"></p>
+        <details><summary>Google Drive kurulumu nasıl yapılır?</summary><p class="muted">Google Cloud Console'da Drive API'yi etkinleştirin; OAuth onay ekranını yapılandırın; "Web application" OAuth Client ID oluşturup Authorized JavaScript origins listesine tam GitHub Pages origin'inizi ekleyin. Drive'a yüklemeden önce Google hesabınızı seçip izni onaylayın. Ayrıntı <code>GOOGLE_DRIVE_KURULUM.md</code> dosyasında.</p></details>
+      </article>
+      <article class="card"><div class="card-head"><h2>Belge arşivi</h2><div class="phase5-buttons"><button type="button" id="p5ImportLegacy" class="secondary">Eski belge bağlantılarını içe al</button><button type="button" id="p5DocCsv" class="secondary">CSV Dışa Aktar</button></div></div><label>Belgelerde ara<input id="p5DocSearch" type="search" placeholder="Ad, tarih, tür, ilişkili kayıt..."></label><div id="p5DocumentList" class="phase5-list"></div></article>
+    </section>
+
+    <section id="reports" class="panel">
+      <div class="section-title"><div><h2>Gelişmiş Servis Raporları</h2><p>Servis ziyaretleri, işlem maliyetleri, tekrar eden arızalar ve garanti/teminat sonuçlarının analizi.</p></div></div>
+      <article class="card"><div class="card-head"><h2>Rapor filtresi ve dışa aktarım</h2></div>
+        <div class="phase5-toolbar"><label>Yıl<select id="p5ReportYear"><option value="all">Tüm yıllar</option></select></label><button type="button" id="p5ReportCsv" class="secondary">Raporu CSV İndir</button><button type="button" id="p5ReportPrint" class="secondary">Yazdır / PDF</button></div>
+        <p class="muted">Ziyaret toplamları ve işlem satırları alternatif maliyet görünümüdür; birlikte toplanmaz. Bir servis ziyareti birden fazla işlem içerebilir.</p>
+        <div id="p5ReportBody" aria-live="polite"></div></article>
+    </section>
+
+    <section id="reminders" class="panel">
+      <div class="section-title"><div><h2>Hatırlatmalar ve Takvim</h2><p>Bakım, araç/batarya garantisi, sigorta, kasko ve ek teminat bitişlerini takip edin.</p></div></div>
+      <article class="card"><h2>Hatırlatma tercihleri</h2>
+        <p class="muted">Yaklaşan tarih sınırları için uygulama içi uyarıları görün. iPhone Takvim / Google Takvim / Outlook'a aktarabilmek için ICS dosyasını indirin.</p>
+        <div class="phase5-toolbar"><label>Takvimde ön uyarı günleri<input type="text" id="p5AlarmDays" placeholder="30,15,7" inputmode="text"></label><button type="button" id="p5SaveAlarmDays">Tercihleri Kaydet</button><button type="button" id="p5ExportIcs" class="secondary">Takvim Hatırlatmaları (.ics)</button></div>
+        <p class="muted"><strong>Önemli:</strong> ICS yalnız tarih için alarm oluşturur; kilometre sınırları Dashboard'da güncel km girişlerine göre değerlendirilir. Takvime aktarma ve takvim uygulamasında bildirim izni verme size aittir. Poliçe/bakım yenilendiğinde takvim dosyasını yeniden aktarın. Bu sürüm kendi başına uygulama kapalıyken e-posta/push göndermez.</p>
+        <p id="p5ReminderFeedback" class="muted" aria-live="polite"></p>
+      </article>
+      <article class="card"><div class="card-head"><h2>Güncel durum</h2><span id="p5ReminderCount" class="badge neutral">0 kayıt</span></div><div id="p5ReminderList" class="phase5-list"></div></article>
+    </section>
+
     <section id="settings" class="panel">
       <form id="settingsForm" class="form-card narrow">
         <h2>Araç / Batarya Ayarları</h2>
@@ -929,7 +976,7 @@
     </section>
   </main>
 
-  <footer>v0.13.0 · Servis ve Arıza Takibi Yönetimi + Kolay Günlük Kayıt · Engineer Edition · Tek kullanıcı giriş kapısı · Firebase Sync · GitHub Pages · iPhone uyumlu · km/SOC eksik geçmiş kayıt desteği · süre→ortalama güç/C-rate</footer>
+  <footer>v0.14.0 · Belgeler, Servis Raporları ve Takvim Hatırlatmaları + Kolay Günlük Kayıt · Engineer Edition · Tek kullanıcı giriş kapısı · Firebase Sync · GitHub Pages · iPhone uyumlu · km/SOC eksik geçmiş kayıt desteği · süre→ortalama güç/C-rate</footer>
   </div>
 
   <script src="weather.js"></script>
@@ -941,7 +988,9 @@
   <script src="maintenance-model.js"></script>
   <script src="coverage-model.js"></script>
   <script src="service-model.js"></script>
+  <script src="phase5-model.js"></script>
   <script src="app.js"></script>
+  <script src="phase5-ui.js"></script>
   <script type="module" src="firebase-sync.js"></script>
   <script>
     if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {

@@ -1,5 +1,5 @@
-const CACHE='t10x-battery-v0.13.0-service';
-const ASSETS=['./','./index.html','./app.css','./weather.js','./soc-model.js','./consumption-model.js','./soh-model.js','./range-model.js','./seasonal-range.js','./maintenance-model.js','./coverage-model.js','./service-model.js','./app.js','./firebase-sync.js','./firebase-config.js','./manifest.webmanifest'];
+const CACHE='t10x-battery-v0.14.0-documents-reports';
+const ASSETS=['./','./index.html','./app.css','./weather.js','./soc-model.js','./consumption-model.js','./soh-model.js','./range-model.js','./seasonal-range.js','./maintenance-model.js','./coverage-model.js','./service-model.js','./phase5-model.js','./phase5-ui.js','./app.js','./firebase-sync.js','./firebase-config.js','./manifest.webmanifest'];
 self.addEventListener('install',e=>e.waitUntil(caches.open(CACHE).then(c=>c.addAll(ASSETS)).then(()=>self.skipWaiting())));
 self.addEventListener('activate',e=>e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim())));
 self.addEventListener('fetch',e=>{

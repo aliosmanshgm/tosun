@@ -1,3 +1,13 @@
+## v0.14.0 — Faz 5 Teknik Kontroller
+
+- Her belge ilişki anahtarı (`linkType`, `linkId`), HTTPS URL ve kayıt ayrımıyla tutulur. Drive dosyası Firebase'de saklanmaz, yalnız meta veri saklanır. Eski bağlantıların içe aktarımı tekrarlı eşleştirmeyi önler.
+- Google Drive doğrudan upload OAuth `drive.file` kapsamı ister. OAuth tokenı yalnız tarayıcı belleğindedir, Client ID yerel ayarlardadır. Mevcut GitHub origin Google OAuth konsoluna önceden tanımlanmalıdır. Dış servis gerçek oturum testi yapılmamıştır.
+- Servis ziyaretleri ve tek tek müdahalelerin bedelleri toplamda toplanmaz; çifte sayım yapılmaz. Bağımsız arıza vaka sayısı parça değişim sayısından ayrıdır.
+- Takvim `.ics` alarmı yalnız tarihli gelecekteki olaylar için hazırlanır. Km eşiği olay tarihini öne çekebilir; takvim yalnız tarih hatırlatmasıdır. Sunucu tarafında e-posta gönderimi yoktur.
+- `schemaVersion 19` ve `t10xBatteryTracker_v19`; eski `v16` ve daha eski yedekler migrate edilir. Firebase UID/rules değiştirilmez.
+
+---
+
 # T10X v0.9.5 — SOH ve Sayfalar Arası Bilimsel/Teknik Denetim
 
 **Kapsam:** v0.9.4 kodundan v0.9.5 güncellemesi. İnceleme statik kaynak kodu ve otomatik modül testlerini kapsar. Üretici BMS telemetrisi, gerçek Firebase hesabı ve iPhone Safari ile canlı doğrulama yapılmamıştır.
