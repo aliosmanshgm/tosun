@@ -1,6 +1,10 @@
+## v0.14.1 · Google Drive belge seçimi
+
+Belgeler > Belge Ekle / Düzenle bölümündeki yeni açılır seçim menüsünde Firebase belge arşivi ve uygulamanın özel Google Drive klasöründeki dosyalar yer alır. Drive listesini almak için “Drive Belgelerini Getir / Yenile” düğmesini kullanın. Seçim dosya adını ve URL alanını doldurur; referans için ayrıca “Belge Referansını Kaydet” gereklidir. Gerekli OAuth izni yine `drive.file`.
+
 # T10X Araç & Batarya Takip v0.14.0 — Faz 5: Belge, Rapor, Hatırlatma
 
-**Bu dosya ve ZIP klasörü v0.14.0 güncel sürümüdür.** Önceki README geçmişi aşağıda korunmaktadır.
+**v0.14.1 sürümü, v0.14.0 Faz 5 üzerine eklenen belge seçimi güncellemesidir.** Önceki README geçmişi aşağıda korunmaktadır.
 
 ## Faz 5 yenilikleri
 
@@ -14,7 +18,7 @@
 ### Kurulum
 
 1. Mevcut v0.13.0 uygulamasında **JSON Yedekle** işlemi yapın.
-2. ZIP içindeki `t10x_arac_batarya_v0.14.0` klasörünün *içindeki bütün dosyaları* GitHub Pages `main` köküne yükleyin.
+2. ZIP içindeki `t10x_arac_batarya_v0.14.1` klasörünün *içindeki bütün dosyaları* GitHub Pages `main` köküne yükleyin.
 3. Firebase'e normal giriş yapın; Belgeler, Servis Raporları, Hatırlatmalar menülerini kontrol edin.
 4. Eski Drive belge URL'lerini kullanıyorsanız Belgeler sayfasındaki **Eski belge bağlantılarını içe al** işlemini çalıştırın. Drive'a dosya yüklemek isterseniz ayrı kurulum yönergesini izleyin.
 5. Hatırlatmalar sayfasından `.ics` dosyasını indirip takvim uygulamanıza içe aktarın. Belge ve poliçe değişikliklerinde takvim dosyasını yeniden oluşturun.

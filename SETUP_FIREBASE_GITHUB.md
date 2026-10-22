@@ -1,3 +1,6 @@
+## v0.14.1 güncellemesi
+Mevcut verilerinizi JSON olarak yedekleyin. ZIP içindeki **tüm** dosyaları GitHub kök dizinine yükleyin. Firebase Realtime Database kuralları, Google OAuth onay ekranı ve istemci kapsamı değişmiyor. `phase5-ui.js`, `index.html`, `app.css` ve `sw.js` birlikte güncellenmelidir.
+
 # v0.14.0 - Faz 5 Kurulum
 
 **Önce JSON yedeği alın.** GitHub Pages kök dizinindeki dosyaları v0.14.0 paketindekilerle değiştirin. Yeni `phase5-model.js` ve `phase5-ui.js` dosyalarını da ekleyin; diğer tüm dosyaları birlikte güncelleyin. Firebase Rules değişmeyecek. Firebase tek kullanıcı kimliği korunur. Drive belge yüklemesi için ek Google OAuth kurulumu `GOOGLE_DRIVE_KURULUM.md` dosyasında, modül kullanım adımları `FAZ5_KULLANIM.md` dosyasındadır. Eski veri göçü `schemaVersion 19`, depolama anahtarı `t10xBatteryTracker_v19` ile gerçekleşir. ICS hatırlatmaları takvime **manuel olarak aktarılır**; uygulama kapalıyken e-posta/push göndermez.

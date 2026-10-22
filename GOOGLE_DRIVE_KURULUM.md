@@ -25,3 +25,11 @@ Bu entegrasyon **isteğe bağlıdır**. Drive bağlantısı vermek yeterliyse AP
 ## Test planı
 
 Firebase oturumuyla GitHub Pages'te açın, Drive OAuth iznini onaylayın, küçük bir PDF yükleyin, belge referansını kaydedin. Başka cihazda aynı Firebase hesabıyla oturum açıp referansın görüntülendiğini, Google hesabınızla açılabildiğini doğrulayın. Özel belgelerin yanlışlıkla herkese açık olmadığını kontrol edin.
+
+## 2. Yüklenmiş belgeleri yeniden seçmek (v0.14.1)
+
+- **Belgeler → Belge Ekle / Düzenle → Daha önce yüklediğim / kaydettiğim belgeyi seç** menüsünde Firebase'e kaydedilmiş belgeler hemen görünür.
+- **Drive Belgelerini Getir / Yenile** ile yalnız uygulamanın oluşturduğu `T10X Arac Takip Belgeleri` klasöründeki dosyaları sınırlı `drive.file` izniyle listelersiniz. Yetki süresi bitmişse Google hesabı seçimi yeniden açılabilir.
+- Menüde bir dosya seçildiğinde **Belge adı** ve **Drive bağlantısı** doldurulur. Dosya adı değiştirilebilir. İlişkili bakım/garanti/servis kaydını seçip **Belge Referansını Kaydet** düğmesine basarak Firebase'e belge referansını kaydetmeniz gerekir.
+- Drive'da görünmeyen eski dosyalar daha önce başka uygulamayla veya klasörde oluşturulmuş olabilir; bu durumda mevcut HTTPS Drive bağlantısını elle ekleyebilirsiniz.
+- Dosyalar Firebase Storage'a yüklenmez; listeleme sırasında Drive dosyalarının tamamının bir kopyası Firebase'e yazılmaz.

@@ -9,3 +9,14 @@
 **Sınır:** v0.14 uygulama kapalıyken kendi başına e-posta veya push göndermez. Takvim uygulamanız olay/hatırlatmaları içe aktardıktan sonra işletim sisteminin sunduğu bildirimleri kullanabilir. Kurumsal sunucu tarafı e-posta hatırlatma istenirse zamanlanmış bir servis ve uygun kimlik/doğrulama kurulumu ayrıca gerekir.
 
 **Veri aktarımı:** Eski v0.13 verileri, servis/bakım/garanti kayıtları ve şarj geçmişi korunur; `phase5.documents` ve `phase5.preferences` eklenir. GitHub'a yeni `phase5-model.js`, `phase5-ui.js` dahil *bütün dosyaları* yükleyin. Önce JSON yedeği alın.
+
+## Güncelleme v0.14.1: Yüklenmiş dosya seçme
+
+**Belgeler > Belge Ekle / Düzenle** içinde dosya listesi bulunmaktadır.
+
+1. **Drive Belgelerini Getir / Yenile** düğmesine basıp gerekirse Google hesabı iznini onaylayın.
+2. Açılır menüden uygulamanın Drive klasöründeki bir dosyayı veya önceden Firebase'e kaydettiğiniz referansı seçin. Dosya adı/URL otomatik doldurulur.
+3. Tür, tarih, ilgili kayıt (bakım/servis/poliçe vb.) bilgilerini tamamlayın.
+4. **Belge Referansını Kaydet** düğmesine basın. Google Drive'a ikinci kez dosya yüklenmez.
+
+Dosyanın adını dilerseniz dosya adından farklı, daha açıklayıcı bir belge başlığı olarak düzenleyebilirsiniz. Belge listesi yalnız uygulamanın erişebildiği klasörü kapsar. Firebase'de kaydettiğiniz referanslar Drive yetkisi olmadan da listelenir.

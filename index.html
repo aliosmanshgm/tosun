@@ -892,6 +892,15 @@
       <div class="section-title"><div><h2>Belgeler ve Kanıtlar</h2><p>İş emri, servis raporu, fatura, poliçe, garanti ve fotoğrafları ilgili kayıtla ilişkilendirin. Dosyanın kendisi Firebase'de saklanmaz.</p></div></div>
       <article class="card"><div class="card-head"><h2>Belge Ekle / Düzenle</h2><span id="docCount" class="badge neutral">0 belge</span></div>
         <form id="p5DocumentForm"><input type="hidden" id="p5DocId"><div class="form-grid">
+          <div class="span-2 phase5-file-picker">
+            <label for="p5DocPick">Daha önce yüklediğim / kaydettiğim belgeyi seç</label>
+            <div class="phase5-picker-controls">
+              <input id="p5DocPickSearch" type="search" placeholder="Dosya adına göre ara..." aria-label="Belgelerde ara" autocomplete="off">
+              <button id="p5DriveRefresh" type="button" class="secondary">Drive Belgelerini Getir / Yenile</button>
+            </div>
+            <select id="p5DocPick" aria-label="Yüklenmiş veya kayıtlı belgeler"><option value="">— Yeni belge / manuel giriş —</option></select>
+            <p id="p5DocPickInfo" class="muted" aria-live="polite">Firebase'e kaydedilmiş belge referansları burada görünür. Drive'a yüklediğiniz ama henüz eşleştirmediğiniz dosyalar için “Drive Belgelerini Getir”e basın.</p>
+          </div>
           <label>Belge adı<input id="p5DocName" type="text" maxlength="160" required placeholder="Örn. Ön kamera değişimi iş emri"></label>
           <label>Belge türü<select id="p5DocKind"></select></label>
           <label>İlişkili kayıt<select id="p5DocLink"></select></label>
@@ -900,7 +909,7 @@
           <label class="span-2">Açıklama<textarea id="p5DocNotes" rows="2" maxlength="2500"></textarea></label>
         </div>
         <div class="form-actions"><button type="submit" id="p5DocSave">Belge Referansını Kaydet</button><button type="button" id="p5DocCancel" class="secondary">Temizle</button></div>
-        <p class="muted">Belge yalnızca sizin erişiminize açık kalabilir. Firebase'e sadece belge bağlantısı ve açıklaması kaydedilir. Belgeleri GitHub'a yüklemeyin.</p><p id="p5DocFeedback" class="muted" aria-live="polite"></p>
+        <p class="muted">Listeden dosya seçmek belge referansını otomatik olarak kaydetmez. İlişkili kaydı seçip “Belge Referansını Kaydet” düğmesine basın. Belge yalnızca sizin erişiminize açık kalabilir. Firebase'e sadece belge bağlantısı ve açıklaması kaydedilir. Belgeleri GitHub'a yüklemeyin.</p><p id="p5DocFeedback" class="muted" aria-live="polite"></p>
         </form></article>
       <article class="card phase5-drive"><div class="card-head"><h2>İsteğe bağlı Google Drive yükleme</h2><span class="badge neutral">Google hesabı gerekir</span></div>
         <p class="muted">Uygulama doğrudan kendi Google hesabınıza, sınırlı <code>drive.file</code> izniyle dosya yükleyebilir. Bu özellik için bir defalık OAuth istemci kimliği ve Drive API kurulumu gerekir. Şifre veya servis hesabı anahtarı istenmez; dosya Firebase'e gönderilmez.</p>
@@ -976,7 +985,7 @@
     </section>
   </main>
 
-  <footer>v0.14.0 · Belgeler, Servis Raporları ve Takvim Hatırlatmaları + Kolay Günlük Kayıt · Engineer Edition · Tek kullanıcı giriş kapısı · Firebase Sync · GitHub Pages · iPhone uyumlu · km/SOC eksik geçmiş kayıt desteği · süre→ortalama güç/C-rate</footer>
+  <footer>v0.14.1 · Drive Belge Seçimi + Belgeler, Servis Raporları ve Takvim Hatırlatmaları + Kolay Günlük Kayıt · Engineer Edition · Tek kullanıcı giriş kapısı · Firebase Sync · GitHub Pages · iPhone uyumlu · km/SOC eksik geçmiş kayıt desteği · süre→ortalama güç/C-rate</footer>
   </div>
 
   <script src="weather.js"></script>

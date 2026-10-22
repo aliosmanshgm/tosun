@@ -743,3 +743,14 @@ input[type="time"]::-webkit-datetime-edit{
 @media(max-width:800px){.phase5-stats{grid-template-columns:repeat(2,minmax(0,1fr))}.phase5-report-grid{grid-template-columns:1fr}.phase5-record-top{flex-direction:column}.phase5-buttons{width:100%;justify-content:flex-start}.phase5-toolbar{display:grid;grid-template-columns:1fr 1fr}.phase5-toolbar>label{grid-column:1/-1}.phase5-toolbar button{width:100%}}
 @media(max-width:390px){.phase5-stats{grid-template-columns:1fr}.phase5-toolbar{grid-template-columns:1fr}.phase5-stat strong{font-size:22px}}
 @media print{body.phase5-print{background:#fff!important;color:#111!important}body.phase5-print .topbar,body.phase5-print .tabs,body.phase5-print .auth-gate,body.phase5-print main>.panel:not(#reports),body.phase5-print #reports .section-title,body.phase5-print #reports .phase5-toolbar,body.phase5-print #reports .card>h2,body.phase5-print #reports .card>.muted,body.phase5-print footer{display:none!important}body.phase5-print .panel#reports{display:block!important}body.phase5-print main{padding:0!important;max-width:100%!important}body.phase5-print .card{box-shadow:none!important;border:0!important;padding:4px!important}body.phase5-print .phase5-stat{break-inside:avoid}body.phase5-print .phase5-report-grid{display:block}body.phase5-print .phase5-report-grid>div{break-inside:avoid;margin:14px 0}body.phase5-print .phase5-stats{grid-template-columns:repeat(3,minmax(0,1fr))}}
+
+/* v0.14.1: searchable, selectable Drive/Firebase document inventory */
+.phase5-file-picker{grid-column:1/-1;min-width:0;background:var(--panel,#f8fbff);border:1px solid #dbe5f1;border-radius:12px;padding:14px}
+.phase5-file-picker label{display:block;font-weight:700;margin:0 0 8px}
+.phase5-file-picker select,.phase5-file-picker input{min-width:0;max-width:100%;width:100%}
+.phase5-picker-controls{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:end;gap:10px}
+.phase5-picker-controls input{margin-top:0;min-height:44px}
+.phase5-picker-controls button{min-height:44px;white-space:normal}
+.phase5-file-picker #p5DocPick{margin-top:10px}
+.phase5-file-picker #p5DocPickInfo{margin:8px 0 0;line-height:1.5}
+@media(max-width:700px){.phase5-picker-controls{grid-template-columns:1fr}.phase5-picker-controls button{width:100%}}
