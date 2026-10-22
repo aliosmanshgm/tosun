@@ -9,7 +9,7 @@
   <meta name="apple-mobile-web-app-title" content="T10X Araç" />
   <meta name="mobile-web-app-capable" content="yes" />
   <link rel="manifest" href="manifest.webmanifest" />
-  <title>T10X Araç & Batarya Takip v0.13.0 · Servis ve Arıza Takibi</title>
+  <title>T10X Araç & Batarya Takip v0.14.2 · Muayene Takibi</title>
   <link rel="stylesheet" href="app.css" />
 </head>
 <body>
@@ -49,6 +49,7 @@
     <button class="tab active" data-tab="dashboard">Gösterge Paneli</button>
     <button class="tab" data-tab="charges">Şarj Kayıtları</button>
     <button class="tab" data-tab="maintenance">Periyodik Bakım</button>
+    <button class="tab" data-tab="inspection">Araç Muayenesi</button>
     <button class="tab" data-tab="warranty">Garantiler & Uzatmalar</button>
     <button class="tab" data-tab="insurance">Sigorta & Kasko</button>
     <button class="tab" data-tab="service">Servis & Arızalar</button>
@@ -83,6 +84,7 @@
         <div class="card-head"><div><span class="cockpit-eyebrow">ARAÇ TAKVİMİ</span><h2>Periyodik Bakım</h2></div><button type="button" class="secondary" id="goMaintenance" data-goto="maintenance">Bakımları yönet</button></div>
         <div id="maintenanceDashboardSummary" aria-live="polite"></div>
       </article>
+      <article class="card maintenance-dashboard-card" aria-label="Araç muayene durumu"><div class="card-head"><div><span class="cockpit-eyebrow">ARAÇ TAKVİMİ</span><h2>Araç Muayenesi</h2></div><button type="button" class="secondary" data-goto="inspection">Muayene Takibi</button></div><div id="inspectionDashboard" aria-live="polite"></div></article>
       <div class="grid two phase3-home-grid">
         <article class="card coverage-dashboard-card"><div class="card-head"><h2>Araç & Batarya Garantileri</h2><button type="button" class="link-btn" data-goto="warranty">Yönet</button></div><div id="warrantyDashboard" aria-live="polite"></div></article>
         <article class="card coverage-dashboard-card"><div class="card-head"><h2>Trafik Sigortası & Kasko</h2><button type="button" class="link-btn" data-goto="insurance">Poliçeleri aç</button></div><div id="insuranceDashboard" aria-live="polite"></div></article>
@@ -254,6 +256,39 @@
       </article>
     </section>
 
+
+
+    <section id="inspection" class="panel inspection-panel">
+      <div class="section-title"><div><h2>Araç Muayene Takibi</h2><p>İlk muayene 18.12.2026 olarak ayarlandı. Sonraki tarihler için resmî muayene raporundaki geçerlilik tarihi esas alınır.</p></div><button type="button" class="secondary" id="inspectionCsv">Muayene CSV İndir</button></div>
+      <article class="card inspection-summary"><div class="card-head"><h2>Muayene durumu ve sonraki tarih</h2><span id="inspectionBadge" class="badge neutral">Bekleniyor</span></div><div id="inspectionSummary" aria-live="polite"></div></article>
+      <div class="grid two inspection-form-grid">
+        <form id="inspectionConfigForm" class="form-card">
+          <h2>Muayene Takvimi Ayarları</h2>
+          <label>İlk muayene son tarihi <input type="date" id="inspectionFirstDate" required></label>
+          <label>Sonraki periyot (ay) <input type="number" id="inspectionMonths" min="1" max="60" step="1" value="24" required></label>
+          <label>Erken uyarı (gün kala) <input type="number" id="inspectionWarnDays" min="0" max="365" step="1" value="60" required></label>
+          <p class="muted">Hususi otomobiller ilk üç yaşın sonunda, ardından iki yılda bir muayeneye tabi tutulur. Ancak muayene sonucunda raporda verilen yeni geçerlilik tarihi her zaman otomatik 24 ay hesabının önündedir. İlk tarih araç belgesiyle doğrulanmalıdır.</p>
+          <div class="form-actions"><button type="submit">Muayene Takvimini Kaydet</button></div><p id="inspectionConfigFeedback" class="maintenance-feedback" role="status"></p>
+        </form>
+        <form id="inspectionRecordForm" class="form-card">
+          <h2 id="inspectionFormTitle">Muayene Sonucu Ekle</h2><input type="hidden" id="inspectionId">
+          <div class="form-grid maintenance-form-grid">
+            <label>Muayene tarihi <input type="date" id="inspectionDate" required></label>
+            <label>Kilometre (isteğe bağlı) <input type="number" id="inspectionOdo" min="0" step="1"></label>
+            <label>Muayene sonucu <select id="inspectionResult"><option value="passed">Onaylandı</option><option value="passed_minor">Hafif kusurlu - onaylandı</option><option value="failed">Ağır kusur / emniyetsiz - onaylanmadı</option><option value="repeat_passed">Tekrar muayenesinde onaylandı</option></select></label>
+            <label id="inspectionNextWrap">Rapordaki bir sonraki geçerlilik son tarihi <input type="date" id="inspectionNextDate"></label>
+            <label id="inspectionRepeatWrap" hidden>Rapordaki tekrar muayenesi son tarihi (varsa) <input type="date" id="inspectionRepeatDate"></label>
+            <label>Muayene istasyonu <input type="text" id="inspectionStation" maxlength="160" placeholder="İstasyon / ilçe"></label>
+            <label>Ödenen tutar (₺) <input type="number" id="inspectionFee" min="0" step="0.01" placeholder="İsteğe bağlı"></label>
+            <label class="span-2">Muayene raporu (Google Drive HTTPS bağlantısı) <input type="url" id="inspectionReportUrl" placeholder="https://drive.google.com/..."></label>
+            <label class="span-2">Kusurlar / yapılan işlemler / açıklama <textarea id="inspectionNotes" maxlength="4000" rows="3"></textarea></label>
+          </div>
+          <p class="muted">Başarılı muayenelerde <strong>rapordaki geçerlilik tarihini</strong> girin. Onaylanmayan muayene yeni iki yıllık periyodu başlatmaz; tekrar muayenesini ayrı kaydedebilirsiniz.</p>
+          <div class="form-actions"><button id="inspectionSave" type="submit">Muayeneyi Kaydet</button><button type="button" id="inspectionReset" class="secondary">Temizle</button></div><p id="inspectionRecordFeedback" class="maintenance-feedback" role="status"></p>
+        </form>
+      </div>
+      <article class="card"><div class="card-head"><h2>Muayene Geçmişi</h2><span id="inspectionCount" class="badge neutral">0 kayıt</span></div><div id="inspectionHistory" class="maintenance-history-list" aria-live="polite"></div></article>
+    </section>
 
     <section id="service" class="panel service-panel">
       <div class="section-title"><div><h2>Yetkili Servis, Arıza & Parça Takibi</h2><p>Servis ziyaretlerini, ayrı arıza vakalarını ve yapılan müdahaleleri birbirine bağlayın. Aynı sorunun tekrarlanmasını görün.</p></div><button id="serviceExportCsv" type="button" class="secondary">Servis / Arıza / İşlem CSV İndir</button></div>
@@ -929,7 +964,7 @@
     </section>
 
     <section id="reminders" class="panel">
-      <div class="section-title"><div><h2>Hatırlatmalar ve Takvim</h2><p>Bakım, araç/batarya garantisi, sigorta, kasko ve ek teminat bitişlerini takip edin.</p></div></div>
+      <div class="section-title"><div><h2>Hatırlatmalar ve Takvim</h2><p>Araç muayenesi, bakım, araç/batarya garantisi, sigorta, kasko ve ek teminat bitişlerini takip edin.</p></div></div>
       <article class="card"><h2>Hatırlatma tercihleri</h2>
         <p class="muted">Yaklaşan tarih sınırları için uygulama içi uyarıları görün. iPhone Takvim / Google Takvim / Outlook'a aktarabilmek için ICS dosyasını indirin.</p>
         <div class="phase5-toolbar"><label>Takvimde ön uyarı günleri<input type="text" id="p5AlarmDays" placeholder="30,15,7" inputmode="text"></label><button type="button" id="p5SaveAlarmDays">Tercihleri Kaydet</button><button type="button" id="p5ExportIcs" class="secondary">Takvim Hatırlatmaları (.ics)</button></div>
@@ -965,6 +1000,7 @@
         <div class="form-actions"><button type="submit">Ayarları Kaydet</button><button type="button" id="clearAllBtn" class="danger">Tüm Verileri Sil</button></div>
       </form>
 
+      <form id="inspectionSettingsForm" class="form-card narrow"><h2>Araç Muayene Ayarı</h2><p class="muted">İlk muayene son tarihini buradan da değiştirebilirsiniz; sonuçları Araç Muayenesi menüsünden kaydedin.</p><label>İlk muayene son tarihi<input type="date" id="inspectionSettingsFirstDate" required></label><div class="form-actions"><button type="submit">Muayene Tarihini Kaydet</button><button type="button" class="secondary" data-goto="inspection">Muayene Kayıtları</button></div><p id="inspectionSettingsFeedback" class="maintenance-feedback" role="status"></p></form>
       <div class="form-card cloud-settings">
         <div class="card-head"><div><h2>Firebase Bulut Senkronizasyonu</h2><p class="muted">GitHub Pages üzerinden iPhone ve diğer cihazlarda aynı veriye güvenli erişim.</p></div><span id="cloudStatusBadge" class="badge neutral">Local</span></div>
         <div id="cloudSetupMessage" class="info-box">Firebase bağlantısı yapılandırıldı. E-posta/şifre ile giriş yaparak bulut senkronizasyonunu başlatabilirsiniz.</div>
@@ -985,7 +1021,7 @@
     </section>
   </main>
 
-  <footer>v0.14.1 · Drive Belge Seçimi + Belgeler, Servis Raporları ve Takvim Hatırlatmaları + Kolay Günlük Kayıt · Engineer Edition · Tek kullanıcı giriş kapısı · Firebase Sync · GitHub Pages · iPhone uyumlu · km/SOC eksik geçmiş kayıt desteği · süre→ortalama güç/C-rate</footer>
+  <footer>v0.14.2 · Araç Muayene Takibi + Drive Belge Seçimi + Belgeler, Servis Raporları ve Takvim Hatırlatmaları + Kolay Günlük Kayıt · Engineer Edition · Tek kullanıcı giriş kapısı · Firebase Sync · GitHub Pages · iPhone uyumlu · km/SOC eksik geçmiş kayıt desteği · süre→ortalama güç/C-rate</footer>
   </div>
 
   <script src="weather.js"></script>
@@ -997,8 +1033,10 @@
   <script src="maintenance-model.js"></script>
   <script src="coverage-model.js"></script>
   <script src="service-model.js"></script>
+  <script src="inspection-model.js"></script>
   <script src="phase5-model.js"></script>
   <script src="app.js"></script>
+  <script src="inspection-ui.js"></script>
   <script src="phase5-ui.js"></script>
   <script type="module" src="firebase-sync.js"></script>
   <script>

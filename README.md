@@ -1,3 +1,14 @@
+## v0.14.2 – Araç Muayene Takibi (22.10.2026)
+
+- **Araç Muayenesi** menüsü: ilk muayene son tarihi varsayılan **18.12.2026**, hem bu menüden hem **Ayarlar** üzerinden düzenlenebilir.
+- Türkiye'de hususi otomobil için ilk 3 yıl ardından 2 yıllık muayene genel periyodu bilgi olarak gösterilir. Resmî muayene raporunda verilen **son geçerlilik tarihi** takipte her zaman esas alınır; başarılı muayene kaydı için zorunludur.
+- Muayene sonucu, istasyon, km (isteğe bağlı), tutar, rapor Google Drive bağlantısı, kusur/not ve varsa tekrar muayene son tarihi saklanır.
+- Onaylanmayan muayenede otomatik 2 yıllık yeni geçerlilik süresi **üretilmez**; tekrar muayenesi durumu ayrı gösterilir.
+- Dashboard, Hatırlatmalar, ICS takvim ve Belgeler ilişkilendirme listesine muayene dahil edildi.
+- v19 -> v20 yerel kayıt anahtarı yükseltildi; önceki Firebase nesnesi migration üzerinden korunur. Tek kullanıcı Firebase kuralları aynıdır.
+- Devam eden veri yönetimi için önce JSON yedeği alın; pakette `inspection-model.js` ve `inspection-ui.js` dosyalarını da depoya yükleyin.
+- Kaynak: Araç Muayene İstasyonlarının Açılması, İşletilmesi ve Araç Muayenesi Hakkında Yönetmelik m.14. İlk tarih kullanıcı beyanıdır; tescil/uygunluk ve geçerlilik bilgileriyle doğrulanmalıdır.
+
 ## v0.14.1 · Google Drive belge seçimi
 
 Belgeler > Belge Ekle / Düzenle bölümündeki yeni açılır seçim menüsünde Firebase belge arşivi ve uygulamanın özel Google Drive klasöründeki dosyalar yer alır. Drive listesini almak için “Drive Belgelerini Getir / Yenile” düğmesini kullanın. Seçim dosya adını ve URL alanını doldurur; referans için ayrıca “Belge Referansını Kaydet” gereklidir. Gerekli OAuth izni yine `drive.file`.

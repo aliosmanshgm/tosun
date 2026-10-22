@@ -1,3 +1,10 @@
+## v0.14.2 – Araç muayenesi
+
+1. Araç Muayenesi menüsünde ilk muayene tarihi **18.12.2026** olarak hazırdır. Gerektiğinde burada veya Ayarlar bölümünden değiştirin.
+2. Muayene sonrası raporun tarihini, sonucunu ve **yeni geçerlilik son tarihini** girin. Başarısız muayenede raporda belirtilmişse tekrar muayene tarihini kaydedin.
+3. Muayene raporunu Google Drive'a yükleyin ve belgeyi Belgeler menüsünden ilgili **Araç muayenesi** kaydıyla eşleştirin. İsterseniz rapor bağlantısını doğrudan muayene formuna da yapıştırın.
+4. Dashboard muayene durumunu gösterir; Hatırlatmalar menüsündeki ICS takvim dosyasına muayene tarihi dahil edilir.
+
 # Faz 5 – kısa kullanım kılavuzu
 
 **Belgeler:** Eski bakım, garanti, sigorta/kasko, servis ziyareti, arıza veya servis işlemine bağlantı oluşturun. İlgili kaydı seçtiğinizde bu belgeyi raporlarda ve geçmişte eşleştirebilirsiniz. Tek bir servis ziyareti için birden çok belge eklenebilir. Önceki sürümlerin belge URL alanlarını topluca listelemek için **Eski belge bağlantılarını içe al** kullanın. Belge PDF/JPG olarak Drive'da tutulur; Firebase'e yalnızca ad, tür, bağlantı, tarih ve ilişki bilgileri yazılır.
