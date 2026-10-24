@@ -1,4 +1,4 @@
-const CACHE='t10x-battery-v0.15.0-service-workflow';
+const CACHE='t10x-battery-v0.15.1-timeline-order';
 const ASSETS=['./','./index.html','./app.css','./weather.js','./soc-model.js','./consumption-model.js','./soh-model.js','./range-model.js','./seasonal-range.js','./maintenance-model.js','./inspection-model.js','./inspection-ui.js','./coverage-model.js','./service-model.js','./service-workflow-ui.js','./phase5-model.js','./phase5-ui.js','./app.js','./firebase-sync.js','./firebase-config.js','./manifest.webmanifest'];
 self.addEventListener('install',e=>e.waitUntil(caches.open(CACHE).then(c=>c.addAll(ASSETS)).then(()=>self.skipWaiting())));
 self.addEventListener('activate',e=>e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim())));

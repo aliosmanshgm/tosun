@@ -1,3 +1,17 @@
+# v0.15.1 – Servis süreç geçmişinde kronolojik sıralama
+
+- Servis dosyasındaki şikâyet, görüşme, randevu, parça talebi, ziyaret, müdahale ve takip olaylarına **isteğe bağlı saat (HH:mm)** eklendi.
+- Sıralama: tarih artan; aynı tarihte saat belirtilen kayıtlar saat artan; saat belirtilmeyenler kendi aralarında kullanıcı sırasına göre.
+- Aynı tarihli, saati bilinmeyen olayları **Yukarı / Aşağı** ile hareket ettirin. Aynı tarih dışında ve saatli olaylarda sıralamayı manuel değiştirmiyoruz.
+- Manuel sıra `service.timelineOrders` içinde, servis dosyası ve gün bazında saklanır. Önceden kaydedilen ziyaret/arıza/işlem kimlikleri ve bağlantılar değişmez.
+- Eski kayıtlara otomatik saat yazılmaz; geçmişte zaman bilgisi bulunmadığını dürüstçe gösterir.
+- Kayda saat girince o olayın manuel sıradan çıkarak saat sırasına yerleşmesi beklenir.
+- İsteğe bağlı saatler servisteki her ilgili kayıt formundan düzenlenebilir. Saat olmadan kayıt geçerlidir.
+
+**Güncelleme:** GitHub Pages kök dizinindeki tüm dosyaları yeni pakettekilerle değiştirin; `service-model.js`, `service-workflow-ui.js`, `app.js`, `index.html`, `app.css` ve `sw.js` birlikte yüklenmelidir. Önce uygulamadan JSON yedeği alın.
+
+---
+
 # v0.15.0 – Servis Süreç Yönetimi
 
 Bu sürüm, servis ziyareti gerektirmeden şikâyet dosyası açma, servis görüşmelerini, parça tedarik durumunu ve geri dönüş takiplerini aynı dosyada tutma olanağı ekler. Önceki servis ziyareti, arıza, parça değişimi ve belge referanslarının ID'leri değiştirilmez. Yeni veriler `service.interactions`, `service.partOrders`, `service.followUps` altında kaydedilir. Eski arızalardaki `firstVisitId` alanı aynen korunur. **Yeni şikâyette `firstVisitId` zorunlu değildir.**

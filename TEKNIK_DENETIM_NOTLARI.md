@@ -160,3 +160,8 @@ Ardından var olan diğer `tests/*.test.js` dosyalarıyla hesaplama regresyon te
 - Tarihli acik takip gorevleri, varsa tahmini parca temin tarihleri ve verilen randevu tarihleri `phase5-model.js` tarafindan hatirlatmalara/ICS'ye dahil edilir. Tarihlerin gercekligi ve randevunun servis tarafindan teyidi kullanici verisine baglidir.
 - Uygulama tasariminda `schemaVersion:21`, yerel anahtar `t10xBatteryTracker_v21`; v20 dahil gecmis anahtarlar okunur. Bulut ve yerel veri arasinda otomatik birlestirme yapilmaz; zaman damgasi temelli mevcut Firebase sync protokolu korunur.
 - Testler: eski v20 veri migrasyonu, randevusuz sikayet, gorsusme, tedarik, takip, takvim, kimlik koruma ve 390 piksel mobil gorunum. Canli Firebase/iPhone Safari uctan uca testi yapilmamistir.
+
+
+## v0.15.1 – Servis kronolojisi
+
+Olaylar tarih, mevcutsa HH:mm ile sıralanır. Aynı günün saatli olayları önce kronolojik, saatsiz olayları sonra el ile düzenlenen sırayla gösterilir. Kullanıcı sırası olay kimliklerinden bağımsız bir metin olarak değil, `service.timelineOrders` içinde dosya/gün bazında kalıcı olay anahtarlarıyla tutulur. Gerçek servis, arıza, müdahale veya belge kayıtları yerinde bırakılır. Yeni kayıt saati yoksa tahmin edilmez. Uygulama başına eskinin şeması 21 korunur; yeni alanlar opsiyoneldir.

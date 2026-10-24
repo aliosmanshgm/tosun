@@ -9,7 +9,7 @@
   <meta name="apple-mobile-web-app-title" content="T10X Araç" />
   <meta name="mobile-web-app-capable" content="yes" />
   <link rel="manifest" href="manifest.webmanifest" />
-  <title>T10X Araç & Batarya Takip v0.15.0 · Servis Süreç Yönetimi</title>
+  <title>T10X Araç & Batarya Takip v0.15.1 · Servis Kronolojisi</title>
   <link rel="stylesheet" href="app.css" />
 </head>
 <body>
@@ -309,6 +309,7 @@
           <div class="form-grid maintenance-form-grid">
             <label>İlk servis ziyareti (isteğe bağlı) <select id="svIssueVisit"></select></label>
             <label>Arıza bildirim tarihi <input id="svIssueDate" type="date" required /></label>
+            <label>Bildirim saati (isteğe bağlı) <input id="svIssueTime" type="time" /></label>
             <label class="span-2">Sorunun adı <input id="svIssueName" maxlength="180" required placeholder="Örn. Kamera görüntüsü kesiliyor" /></label>
             <label>Servis süreci aşaması <select id="svIssueStage">
 <option value="reported">Şikâyet bildirildi</option><option value="awaiting_reply">Servisten dönüş bekleniyor</option><option value="inspection_planned">Ön kontrol planlandı</option><option value="inspected">Ön kontrol yapıldı</option><option value="temporary">Geçici müdahale</option><option value="part_wait">Parça bekleniyor</option><option value="appointment_wait">Randevu bekleniyor</option><option value="repair_planned">Kesin onarım planlandı</option><option value="repair_done">Onarım gerçekleştirildi</option><option value="monitoring">Sonuç takip ediliyor</option><option value="closed">Çözüldü / kapatıldı</option>
@@ -330,10 +331,12 @@
           <div class="form-grid maintenance-form-grid">
             <label class="span-2">İlgili servis dosyası <select id="svInteractionIssue" required></select></label>
             <label>Tarih <input id="svInteractionDate" type="date" required /></label>
+            <label>Görüşme saati (isteğe bağlı) <input id="svInteractionTime" type="time" /></label>
             <label>İletişim kanalı <select id="svInteractionChannel"><option value="phone">Telefon</option><option value="trumore">Trumore</option><option value="in_person">Yüz yüze</option><option value="email">E-posta</option><option value="other">Diğer</option></select></label>
             <label>Gelişme türü <select id="svInteractionType"><option value="complaint">Şikâyet bildirimi</option><option value="response">Servis yanıtı</option><option value="inspection">Ön kontrol</option><option value="temporary">Geçici müdahale</option><option value="call">Görüşme / bilgi</option><option value="appointment">Randevu bilgisi</option><option value="other">Diğer</option></select></label>
             <label>Görüşülen kişi / servis <input id="svInteractionContact" maxlength="150" placeholder="Opsiyonel" /></label>
             <label>Verilen randevu tarihi (varsa) <input id="svInteractionAppointment" type="date" /></label>
+            <label>Randevu saati (isteğe bağlı) <input id="svInteractionAppointmentTime" type="time" /></label>
             <label>Randevu türü <select id="svInteractionAppointmentType"><option value="inspection">Ön kontrol</option><option value="repair">Kesin onarım / parça değişimi</option><option value="other">Diğer</option></select></label>
             <label class="span-2">Ne oldu / servis ne söyledi? <textarea id="svInteractionDescription" required maxlength="4000" rows="3" placeholder="Örn. Parça talep edildi, tedarik sonrası aranacağım."></textarea></label>
             <label class="span-2">Belge / mesaj bağlantısı (isteğe bağlı) <input type="url" id="svInteractionDoc" placeholder="https://drive.google.com/..." /></label>
@@ -349,6 +352,7 @@
           <div class="form-grid maintenance-form-grid">
             <label class="span-2">İlgili servis dosyası <select id="svPartIssue" required></select></label>
             <label>Talep tarihi <input id="svPartDate" type="date" required /></label>
+            <label>Talep saati (isteğe bağlı) <input id="svPartTime" type="time" /></label>
             <label>Durum <select id="svPartStatus"><option value="requested">Talep edildi</option><option value="ordered">Sipariş verildi</option><option value="waiting">Tedarik bekleniyor</option><option value="ready">Parça temin edildi</option><option value="installed">Takıldı</option><option value="cancelled">İptal</option></select></label>
             <label>Bileşen <select id="svPartComponent"></select></label>
             <label>Parça adı / numarası <input id="svPartNumber" maxlength="160" placeholder="Bilinmiyorsa bileşeni seçin" /></label>
@@ -366,6 +370,7 @@
           <div class="form-grid maintenance-form-grid">
             <label class="span-2">İlgili servis dosyası <select id="svFollowIssue" required></select></label>
             <label>Takip tarihi <input id="svFollowDate" type="date" required /></label>
+            <label>Takip saati (isteğe bağlı) <input id="svFollowTime" type="time" /></label>
             <label>Takip durumu <select id="svFollowStatus"><option value="open">Bekliyor</option><option value="done">Tamamlandı</option><option value="cancelled">İptal</option></select></label>
             <label class="span-2">Beklenen işlem / taahhüt <textarea id="svFollowDescription" rows="2" required maxlength="3000" placeholder="Örn. Servisi arayıp parça durumunu sor."></textarea></label>
             <label>Tamamlanma tarihi <input id="svFollowDoneDate" type="date" /></label>
@@ -384,6 +389,7 @@
           <input id="svVisitId" type="hidden" />
           <div class="form-grid maintenance-form-grid">
             <label>Giriş tarihi <input id="svVisitEntry" type="date" required /></label>
+            <label>Giriş saati (isteğe bağlı) <input id="svVisitTime" type="time" /></label>
             <label>Çıkış tarihi (varsa) <input id="svVisitExit" type="date" /></label>
             <label>Giriş kilometresi <input id="svVisitOdo" type="number" min="0" step="1" placeholder="Bilinmiyorsa boş" /></label>
             <label>Durum <select id="svVisitStatus"><option value="planned">Planlandı</option><option value="active">Serviste</option><option value="closed">Tamamlandı</option><option value="cancelled">İptal</option></select></label>
@@ -420,6 +426,7 @@
           <div class="form-grid maintenance-form-grid">
             <label>İlgili servis ziyareti <select id="svActionVisit" required></select></label>
             <label>İşlem tarihi <input id="svActionDate" type="date" required /></label>
+            <label>İşlem saati (isteğe bağlı) <input id="svActionTime" type="time" /></label>
             <label>İlgili arıza (isteğe bağlı) <select id="svActionIssue"><option value="">Genel işlem / bakım</option></select></label>
             <label>Bileşen (varsa) <select id="svActionComponent"></select></label>
             <label>İşlem türü <select id="svActionType"><option value="diagnosis">Kontrol / teşhis</option><option value="software">Yazılım işlemi</option><option value="repair">Onarım</option><option value="replacement">Parça değişimi</option><option value="adjustment">Ayar / kalibrasyon</option><option value="other">Diğer</option></select></label>
@@ -1091,7 +1098,7 @@
     </section>
   </main>
 
-  <footer>v0.15.0 · Servis Süreç Yönetimi + Drive Belge Seçimi + Belgeler, Servis Raporları ve Takvim Hatırlatmaları + Kolay Günlük Kayıt · Engineer Edition · Tek kullanıcı giriş kapısı · Firebase Sync · GitHub Pages · iPhone uyumlu · km/SOC eksik geçmiş kayıt desteği · süre→ortalama güç/C-rate</footer>
+  <footer>v0.15.1 · Servis Süreç Yönetimi + Drive Belge Seçimi + Belgeler, Servis Raporları ve Takvim Hatırlatmaları + Kolay Günlük Kayıt · Engineer Edition · Tek kullanıcı giriş kapısı · Firebase Sync · GitHub Pages · iPhone uyumlu · km/SOC eksik geçmiş kayıt desteği · süre→ortalama güç/C-rate</footer>
   </div>
 
   <script src="weather.js"></script>

@@ -761,3 +761,7 @@ input[type="time"]::-webkit-datetime-edit{
 @media(max-width:480px){.svc-flow-board{padding:14px}.svc-case{padding:12px}.svc-case-head{display:block}.svc-case-head .service-pill{display:inline-flex;margin-top:8px}.svc-case-buttons button{width:100%}.svc-timeline-row{display:block}.svc-time-actions{margin-top:4px}.service-advanced{padding:12px}}
 
 .svc-form-panel{grid-column:1/-1;border:1px solid var(--border,#d5e4e4);border-radius:16px;padding:10px;background:var(--surface-2,transparent)}.svc-form-panel>summary{padding:7px 10px;cursor:pointer;font-weight:750}.svc-form-panel[open]>summary{margin-bottom:10px}.svc-form-panel>.form-card{margin:0;box-shadow:none}.svc-form-panel .form-grid{width:100%}
+
+/* v0.15.1: Service timeline chronological controls. */
+.svc-time-actions{align-items:center;justify-content:flex-end}.svc-time-actions .link-btn{min-height:32px;padding:4px 7px;white-space:nowrap}.svc-time-actions .link-btn:disabled{opacity:.32;cursor:not-allowed;pointer-events:none}.svc-timeline-row>div:first-child{min-width:0;flex:1}.svc-timeline-row small{font-variant-numeric:tabular-nums}
+@media(max-width:480px){.svc-time-actions{justify-content:flex-start;gap:5px}.svc-time-actions .link-btn{font-size:.8rem}}
