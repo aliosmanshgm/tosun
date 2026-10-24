@@ -1,5 +1,5 @@
-const STORAGE_KEY='t10xBatteryTracker_v20';
-const LEGACY_KEYS=['t10xBatteryTracker_v19','t10xBatteryTracker_v16','t10xBatteryTracker_v18','t10xBatteryTracker_v17','t10xBatteryTracker_v15','t10xBatteryTracker_v14','t10xBatteryTracker_v13','t10xBatteryTracker_v12','t10xBatteryTracker_v11','t10xBatteryTracker_v10','t10xBatteryTracker_v9','t10xBatteryTracker_v8','t10xBatteryTracker_v6','t10xBatteryTracker_v5','t10xBatteryTracker_v4','t10xBatteryTracker_v3','t10xBatteryTracker_v2','t10xBatteryTracker_v1'];
+const STORAGE_KEY='t10xBatteryTracker_v21';
+const LEGACY_KEYS=['t10xBatteryTracker_v20','t10xBatteryTracker_v19','t10xBatteryTracker_v16','t10xBatteryTracker_v18','t10xBatteryTracker_v17','t10xBatteryTracker_v15','t10xBatteryTracker_v14','t10xBatteryTracker_v13','t10xBatteryTracker_v12','t10xBatteryTracker_v11','t10xBatteryTracker_v10','t10xBatteryTracker_v9','t10xBatteryTracker_v8','t10xBatteryTracker_v6','t10xBatteryTracker_v5','t10xBatteryTracker_v4','t10xBatteryTracker_v3','t10xBatteryTracker_v2','t10xBatteryTracker_v1'];
 const DEFAULT_PROVIDERS=[
   "ZES Şarj",
   "Trugo Şarj",
@@ -163,7 +163,7 @@ const DEFAULT_PROVIDERS=[
   "Ev / Kendi AC Şarjım"
 ];
 const defaults={
-  meta:{schemaVersion:20,updatedAt:''},
+  meta:{schemaVersion:21,updatedAt:''},
   settings:{
     vehicleName:'T10X Uzun Menzil',batteryChemistry:'NMC',ownershipStartOdo:32356,ownershipStartSoc:59,ownershipStartDate:'',trackingStartOdo:33537,currentOdo:33537,currentSoc:76,
     referenceCapacity:88.5,wltpRangeKm:523,preferredMinSoc:20,preferredMaxSoc:80,
@@ -196,7 +196,7 @@ const D=Object.fromEntries(domIds.map(id=>[id,byId(id)]));
 
 function migrate(obj){
   const out={...structuredClone(defaults),...(obj||{})};
-  out.meta={...structuredClone(defaults.meta),...(obj?.meta||{}),schemaVersion:20};
+  out.meta={...structuredClone(defaults.meta),...(obj?.meta||{}),schemaVersion:21};
   out.settings={...structuredClone(defaults.settings),...(obj?.settings||{})};
   delete out.settings.targetDcShare;delete out.settings.balanceWindow;
   if(obj?.settings&&obj.settings.ownershipStartSoc==null){
@@ -227,14 +227,15 @@ function load(){
   }catch{return structuredClone(defaults)}
 }
 function persistLocal({emit=false}={}){localStorage.setItem(STORAGE_KEY,JSON.stringify(db));renderAll();if(emit)window.dispatchEvent(new CustomEvent('t10x:data-changed',{detail:{db:structuredClone(db)}}));}
-function save(){db.meta={...(db.meta||{}),schemaVersion:20,updatedAt:new Date().toISOString()};persistLocal({emit:true})}
+function save(){db.meta={...(db.meta||{}),schemaVersion:21,updatedAt:new Date().toISOString()};persistLocal({emit:true})}
 
 window.T10XApp={
   getData:()=>structuredClone(db),
   replaceData:(next,{emit=false}={})=>{db=migrate(next||{});persistLocal({emit});return structuredClone(db)},
-  hasMeaningfulData:()=>Boolean(db.charges.length||db.trips.length||db.consumptionSnapshots.length||db.sohTests.length||db.socSnapshots.length||db.driveSessions.length||!!db.activeDrive||db.maintenance?.records?.length||db.maintenance?.config?.startDate||db.coverage?.policies?.length||db.coverage?.extensions?.length||db.coverage?.warranties?.vehicle?.startDate||db.coverage?.warranties?.battery?.startDate||db.service?.visits?.length||db.service?.issues?.length||db.service?.actions?.length||db.service?.components?.length||db.inspection?.records?.length||db.phase5?.documents?.length||db.meta?.updatedAt),
+  updateData:(modifier)=>{if(typeof modifier!=='function')throw new Error('Güncelleme işlevi eksik.');modifier(db);save();return structuredClone(db)},
+  hasMeaningfulData:()=>Boolean(db.charges.length||db.trips.length||db.consumptionSnapshots.length||db.sohTests.length||db.socSnapshots.length||db.driveSessions.length||!!db.activeDrive||db.maintenance?.records?.length||db.maintenance?.config?.startDate||db.coverage?.policies?.length||db.coverage?.extensions?.length||db.coverage?.warranties?.vehicle?.startDate||db.coverage?.warranties?.battery?.startDate||db.service?.visits?.length||db.service?.issues?.length||db.service?.actions?.length||db.service?.components?.length||db.service?.interactions?.length||db.service?.partOrders?.length||db.service?.followUps?.length||db.inspection?.records?.length||db.phase5?.documents?.length||db.meta?.updatedAt),
   storageKey:STORAGE_KEY,
-  schemaVersion:20
+  schemaVersion:21
 };
 
 function uid(){return crypto.randomUUID?crypto.randomUUID():String(Date.now()+Math.random())}
@@ -1213,7 +1214,8 @@ function serviceRefreshCoverage(){const kind=byId('svActionCoverage').value;cons
 function serviceUpdateSelects(){const d=serviceDb();const visits=[...d.visits].sort((a,b)=>String(b.entryDate).localeCompare(String(a.entryDate))).map(v=>({id:v.id,title:`${serviceDate(v.entryDate)} · ${v.center||'Servis'} · ${v.odo??'—'} km`}));
  const comps=d.components.map(x=>({id:x.id,title:x.name+(x.partNo?' · '+x.partNo:'')})).sort((a,b)=>a.title.localeCompare(b.title,'tr'));
  const issues=[...d.issues].sort((a,b)=>String(b.reportDate).localeCompare(String(a.reportDate))).map(x=>({id:x.id,title:`${x.title} · ${serviceDate(x.reportDate)}`}));
- for(const id of ['svIssueVisit','svActionVisit'])serviceSelect(id,visits,{label:'Servis ziyareti seçin'});
+ serviceSelect('svIssueVisit',visits,{label:'Ziyaret yok / henüz randevu verilmedi'});
+ serviceSelect('svActionVisit',visits,{label:'Gerçek servis ziyaretini seçin'});
  for(const id of ['svIssueComponent','svActionComponent'])serviceSelect(id,comps,{label:'Bileşen belirtilmedi'});
  serviceSelect('svActionIssue',issues,{label:'Arıza seçilmedi'});
  const currentId=byId('svIssueId').value;const chosenComp=byId('svIssueComponent').value;
@@ -1225,7 +1227,7 @@ function serviceRowActions(type,id,doc=''){return `<div class="service-row-actio
 function serviceBadge(s,good=false,key=''){return `<span class="service-pill ${good?'ok':['planned','active','open','investigating','unresolved'].includes(key)?'warn':'neutral'}">${escapeHtml(s)}</span>`;}
 function renderService(){const d=serviceDb(),stats=window.T10XService.summarize(d);
  byId('serviceDashboard').innerHTML=`<div class="service-dashboard-mini"><div><span>Açık / planlanan servis</span><strong>${stats.openVisits}</strong></div><div><span>Takip gerektiren arızalar</span><strong>${stats.openIssues}</strong></div><div><span>Parça değişimi</span><strong>${stats.replacements}</strong></div><div><span>Tekrar işareti olan bileşen</span><strong>${stats.repeatingParts}</strong></div></div><p class="muted">${stats.visits} servis ziyareti · ${stats.issues} arıza vakası kayıtlı. İşlem veya parça tekrarı teknik inceleme uyarısıdır.</p>`;
- const overview=[['Servis ziyareti',stats.visits,`${stats.openVisits} açık / planlı`],['Arıza vakası',stats.issues,`${stats.openIssues} takip gerektiriyor`],['Parça değişimi',stats.replacements,'Ayrı işlem kayıtlarından'],['Tekrar eden bileşen',stats.repeatingParts,'≥2 vaka veya değişim']];
+ const flowStats=window.T10XService.workflowStats(d);const overview=[['Açık servis dosyası',flowStats.openCases,`${flowStats.pendingFollowUps} bekleyen takip`],['Servis ziyareti',stats.visits,`${stats.openVisits} açık / planlı`],['Arıza vakası',stats.issues,`${stats.openIssues} takip gerektiriyor`],['Parça değişimi',stats.replacements,'Ayrı işlem kayıtlarından'],['Tekrar eden bileşen',stats.repeatingParts,'≥2 vaka veya değişim']];
  byId('serviceOverview').innerHTML=overview.map(([label,value,detail])=>`<div class="service-stat"><span>${label}</span><strong>${value}</strong><small>${escapeHtml(detail)}</small></div>`).join('');
  byId('serviceRecurringCount').textContent=stats.repeatingParts+' işaretli bileşen';
  const flagged=stats.recurringRows.filter(x=>x.isRecurring);
@@ -1240,33 +1242,33 @@ function renderService(){const d=serviceDb(),stats=window.T10XService.summarize(
  byId('serviceActionHistory').innerHTML=d.actions.length?[...d.actions].sort((a,b)=>String(b.date).localeCompare(String(a.date))).map(a=>{const issue=d.issues.find(i=>i.id===a.issueId),part=d.components.find(c=>c.id===(a.componentId||issue?.componentId));const linked=serviceCoverageChoices().find(x=>x.id===a.coverageRecordId);return `<div class="service-row"><div class="service-row-head"><div><strong>${escapeHtml(serviceLabel(window.T10XService.ACTION_TYPES,a.type))}${part?' · '+escapeHtml(part.name):''}</strong><small>${serviceDate(a.date)} · ${escapeHtml(serviceName(d.visits,a.visitId,'center'))}</small></div>${serviceBadge(serviceLabel(window.T10XService.DECISIONS,a.coverageDecision),a.coverageDecision==='approved')}</div><div class="service-row-meta"><span>${escapeHtml(serviceLabel(window.T10XService.COVERAGE,a.coverageType))}</span><span>Ödenen: ${serviceMoney(a.paid)}</span></div>${a.coverageRecordId?`<p class="muted">Teminat referansı: ${escapeHtml(linked?.title||'İlişkili poliçe/teminat kaydı artık bulunamıyor')}</p>`:''}${issue?`<p>İlgili vaka: ${escapeHtml(issue.title)}</p>`:''}${a.description?`<p>${escapeHtml(a.description)}</p>`:''}${a.type==='replacement'?`<p>Eski parça: ${escapeHtml(a.oldPartNo||'—')} · Yeni parça: ${escapeHtml(a.newPartNo||'—')}</p>`:''}${serviceRowActions('action',a.id,a.documentUrl)}</div>`;}).join(''):'<div class="service-empty">İşlem veya parça değişimi kaydı yok.</div>';
  serviceUpdateSelects();
 }
-function clearService(type){const form=byId({component:'serviceComponentForm',visit:'serviceVisitForm',issue:'serviceIssueForm',action:'serviceActionForm'}[type]);form.reset();const titles={component:'Bileşen / parça kataloğu',visit:'1. Servis ziyareti ekle',issue:'2. Arıza / şikâyet vakası',action:'3. Yapılan işlem / parça değişimi'};
+function clearService(type){const form=byId({component:'serviceComponentForm',visit:'serviceVisitForm',issue:'serviceIssueForm',action:'serviceActionForm'}[type]);form.reset();const titles={component:'Bileşen / parça kataloğu',visit:'Servis ziyareti / ön kontrol / onarım',issue:'1. Yeni Şikâyet / Servis Dosyası',action:'Yapılan işlem / parça değişimi'};
  byId({component:'svCompId',visit:'svVisitId',issue:'svIssueId',action:'svActionId'}[type]).value='';byId({component:'serviceComponentTitle',visit:'serviceVisitTitle',issue:'serviceIssueTitle',action:'serviceActionTitle'}[type]).textContent=titles[type];
- const d=serviceLocalDate();if(type==='visit')byId('svVisitEntry').value=d;if(type==='issue')byId('svIssueDate').value=d;if(type==='action')byId('svActionDate').value=d;
+ const d=serviceLocalDate();if(type==='visit')byId('svVisitEntry').value=d;if(type==='issue'){byId('svIssueDate').value=d;byId('svIssueStage').value='reported';}if(type==='action')byId('svActionDate').value=d;
  serviceUpdateSelects();}
 function serviceFeedback(type,msg){byId({component:'svCompFeedback',visit:'svVisitFeedback',issue:'svIssueFeedback',action:'svActionFeedback'}[type]).textContent=msg;}
-function serviceUpsert(type,r){const col={component:'components',visit:'visits',issue:'issues',action:'actions'}[type];const a=db.service[col],idx=a.findIndex(x=>x.id===r.id);if(idx>=0)a[idx]=r;else a.push(r);save();clearService(type);serviceFeedback(type,'Kayıt kaydedildi. Servis geçmişi ve Dashboard güncellendi.');}
-function serviceEdit(type,id){const col={component:'components',visit:'visits',issue:'issues',action:'actions'}[type],r=serviceDb()[col].find(x=>x.id===id);if(!r)return;showTab('service');clearService(type);const map={
+function serviceUpsert(type,r){const col={component:'components',visit:'visits',issue:'issues',action:'actions'}[type];const a=db.service[col],idx=a.findIndex(x=>x.id===r.id);if(idx>=0)a[idx]={...a[idx],...r};else a.push(r);save();clearService(type);serviceFeedback(type,'Kayıt kaydedildi. Servis geçmişi ve Dashboard güncellendi.');}
+function serviceEdit(type,id){const col={component:'components',visit:'visits',issue:'issues',action:'actions'}[type],r=serviceDb()[col].find(x=>x.id===id);if(!r)return;showTab('service');if(type!=='issue')byId('svLegacyDetails').open=true;clearService(type);const map={
  component:{svCompId:r.id,svCompName:r.name,svCompNumber:r.partNo,svCompRevision:r.revision,svCompNotes:r.notes},
  visit:{svVisitId:r.id,svVisitEntry:r.entryDate,svVisitExit:r.exitDate,svVisitOdo:r.odo,svVisitStatus:r.status,svVisitCenter:r.center,svVisitOrder:r.orderNo,svVisitMaintenance:r.maintenanceId,svVisitCost:r.totalCost,svVisitPaid:r.paidCost,svVisitDoc:r.documentUrl,svVisitNotes:r.notes},
- issue:{svIssueId:r.id,svIssueVisit:r.firstVisitId,svIssueDate:r.reportDate,svIssueName:r.title,svIssueComponent:r.componentId,svIssueStatus:r.status,svIssueRelated:r.relatedIssueId,svIssueSymptom:r.symptom,svIssueNotes:r.notes},
+ issue:{svIssueId:r.id,svIssueVisit:r.firstVisitId,svIssueDate:r.reportDate,svIssueName:r.title,svIssueComponent:r.componentId,svIssueStatus:r.status,svIssueStage:r.stage||((r.status==='resolved')?'closed':r.status==='monitoring'?'monitoring':'reported'),svIssueRelated:r.relatedIssueId,svIssueSymptom:r.symptom,svIssueNotes:r.notes},
  action:{svActionId:r.id,svActionVisit:r.visitId,svActionDate:r.date,svActionIssue:r.issueId,svActionComponent:r.componentId,svActionType:r.type,svActionCoverage:r.coverageType,svActionCoverageRef:r.coverageRecordId,svActionDecision:r.coverageDecision,svActionDescription:r.description,svActionOldPart:r.oldPartNo,svActionNewPart:r.newPartNo,svActionCost:r.cost,svActionPaid:r.paid,svActionDoc:r.documentUrl,svActionNotes:r.notes}
  }[type];
- if(type==='issue'){byId('svIssueComponent').value=r.componentId||'';serviceUpdateSelects();}
+ if(type==='issue'){byId('svIssueComponent').value=r.componentId||'';serviceUpdateSelects();byId('svIssueStage').value=r.stage||((r.status==='resolved')?'closed':r.status==='monitoring'?'monitoring':'reported');}
  if(type==='action'){byId('svActionCoverage').value=r.coverageType||'unknown';serviceRefreshCoverage();}
  for(const [key,value]of Object.entries(map))byId(key).value=value??'';
  const titleId={component:'serviceComponentTitle',visit:'serviceVisitTitle',issue:'serviceIssueTitle',action:'serviceActionTitle'}[type];byId(titleId).textContent='Kaydı Düzenle';
  byId({component:'serviceComponentForm',visit:'serviceVisitForm',issue:'serviceIssueForm',action:'serviceActionForm'}[type]).scrollIntoView({behavior:'smooth',block:'start'});
 }
-function serviceDelete(type,id){const d=serviceDb(),refs={visit:['visits',d.issues.some(x=>x.firstVisitId===id)||d.actions.some(x=>x.visitId===id),'Bu ziyarete bağlı arıza veya işlem var. Önce bağlı kayıtları düzeltin.'],component:['components',d.issues.some(x=>x.componentId===id)||d.actions.some(x=>x.componentId===id),'Bileşene bağlı arıza veya müdahale var; önce bağlantıları kaldırın.'],issue:['issues',d.actions.some(x=>x.issueId===id)||d.issues.some(x=>x.relatedIssueId===id),'Arızaya bağlı işlem veya tekrarlayan vaka var; önce bağlantıları düzenleyin.'],action:['actions',false,'']}[type];if(!refs)return;
- if(refs[1]){alert(refs[2]);return;}if(!confirm('Bu kayıt kalıcı olarak silinsin mi?'))return;db.service[refs[0]]=db.service[refs[0]].filter(x=>x.id!==id);save();clearService(type);}
+function serviceDelete(type,id){const d=serviceDb(),refs={visit:['visits',d.issues.some(x=>x.firstVisitId===id)||d.actions.some(x=>x.visitId===id),'Bu ziyarete bağlı arıza veya işlem var. Önce bağlı kayıtları düzeltin.'],component:['components',d.issues.some(x=>x.componentId===id)||d.actions.some(x=>x.componentId===id)||d.partOrders.some(x=>x.componentId===id),'Bileşene bağlı arıza veya müdahale var; önce bağlantıları kaldırın.'],issue:['issues',d.actions.some(x=>x.issueId===id)||d.issues.some(x=>x.relatedIssueId===id),'Arızaya bağlı işlem veya tekrarlayan vaka var; önce bağlantıları düzenleyin.'],action:['actions',false,'']}[type];if(!refs)return;
+ if(type==='issue'&&(d.interactions.some(x=>x.issueId===id)||d.partOrders.some(x=>x.issueId===id)||d.followUps.some(x=>x.issueId===id))){alert('Bu servis dosyasına bağlı görüşme, parça siparişi veya takip kaydı var. Önce bu kayıtları düzeltin.');return;}if(refs[1]){alert(refs[2]);return;}if(!confirm('Bu kayıt kalıcı olarak silinsin mi?'))return;db.service[refs[0]]=db.service[refs[0]].filter(x=>x.id!==id);save();clearService(type);}
 function initServiceListeners(){
  byId('serviceComponentForm').addEventListener('submit',e=>{e.preventDefault();const r={id:byId('svCompId').value||uid(),name:byId('svCompName').value.trim(),partNo:byId('svCompNumber').value.trim(),revision:byId('svCompRevision').value.trim(),notes:byId('svCompNotes').value.trim()};const errors=window.T10XService.validateComponent(r);if(db.service.components.some(x=>x.id!==r.id&&x.name.toLocaleLowerCase('tr')===r.name.toLocaleLowerCase('tr')&&String(x.partNo||'').toLocaleLowerCase('tr')===String(r.partNo).toLocaleLowerCase('tr')))errors.push('Bu bileşen ve parça numarası zaten katalogda var.');if(errors.length)return serviceFeedback('component',errors.join(' '));serviceUpsert('component',r);});
  byId('serviceVisitForm').addEventListener('submit',e=>{e.preventDefault();const r={id:byId('svVisitId').value||uid(),entryDate:byId('svVisitEntry').value,exitDate:byId('svVisitExit').value,odo:window.T10XService.num(byId('svVisitOdo').value),status:byId('svVisitStatus').value,center:byId('svVisitCenter').value.trim(),orderNo:byId('svVisitOrder').value.trim(),maintenanceId:byId('svVisitMaintenance').value,totalCost:window.T10XService.num(byId('svVisitCost').value),paidCost:window.T10XService.num(byId('svVisitPaid').value),documentUrl:byId('svVisitDoc').value.trim(),notes:byId('svVisitNotes').value.trim()};const errors=window.T10XService.validateVisit(r);if(r.maintenanceId&&!db.maintenance.records.some(m=>m.id===r.maintenanceId))errors.push('İlgili bakım kaydı bulunamadı.');if(db.service.actions.some(a=>a.visitId===r.id&&(a.date<r.entryDate||r.exitDate&&a.date>r.exitDate)))errors.push('Ziyarete bağlı bir işlem tarihi yeni giriş/çıkış aralığının dışında kalıyor.');if(errors.length)return serviceFeedback('visit',errors.join(' '));serviceUpsert('visit',r);});
- byId('serviceIssueForm').addEventListener('submit',e=>{e.preventDefault();const r={id:byId('svIssueId').value||uid(),firstVisitId:byId('svIssueVisit').value,reportDate:byId('svIssueDate').value,title:byId('svIssueName').value.trim(),componentId:byId('svIssueComponent').value,status:byId('svIssueStatus').value,relatedIssueId:byId('svIssueRelated').value,symptom:byId('svIssueSymptom').value.trim(),notes:byId('svIssueNotes').value.trim()};const errors=window.T10XService.validateIssue(r,db.service);if(db.service.actions.some(a=>a.issueId===r.id&&a.componentId&&r.componentId&&a.componentId!==r.componentId))errors.push('Bu arızaya bağlı işlemlerin bileşeniyle uyuşmuyor.');if(errors.length)return serviceFeedback('issue',errors.join(' '));serviceUpsert('issue',r);});
+ byId('serviceIssueForm').addEventListener('submit',e=>{e.preventDefault();const r={id:byId('svIssueId').value||uid(),firstVisitId:byId('svIssueVisit').value,reportDate:byId('svIssueDate').value,title:byId('svIssueName').value.trim(),componentId:byId('svIssueComponent').value,status:byId('svIssueStatus').value,stage:byId('svIssueStage').value,relatedIssueId:byId('svIssueRelated').value,symptom:byId('svIssueSymptom').value.trim(),notes:byId('svIssueNotes').value.trim()};const errors=window.T10XService.validateIssue(r,db.service);if(r.stage==='closed'&&r.status!=='resolved')errors.push('Dosya kapalıysa çözüm durumu da Çözüldü olmalı.');if(r.stage!=='closed'&&r.status==='resolved')errors.push('Çözülen dosyada süreç aşaması Çözüldü / kapatıldı olmalı.');if(db.service.actions.some(a=>a.issueId===r.id&&a.componentId&&r.componentId&&a.componentId!==r.componentId))errors.push('Bu arızaya bağlı işlemlerin bileşeniyle uyuşmuyor.');if(errors.length)return serviceFeedback('issue',errors.join(' '));serviceUpsert('issue',r);});
  byId('serviceActionForm').addEventListener('submit',e=>{e.preventDefault();const r={id:byId('svActionId').value||uid(),visitId:byId('svActionVisit').value,date:byId('svActionDate').value,issueId:byId('svActionIssue').value,componentId:byId('svActionComponent').value,type:byId('svActionType').value,coverageType:byId('svActionCoverage').value,coverageRecordId:byId('svActionCoverageRef').value,coverageDecision:byId('svActionDecision').value,description:byId('svActionDescription').value.trim(),oldPartNo:byId('svActionOldPart').value.trim(),newPartNo:byId('svActionNewPart').value.trim(),cost:window.T10XService.num(byId('svActionCost').value),paid:window.T10XService.num(byId('svActionPaid').value),documentUrl:byId('svActionDoc').value.trim(),notes:byId('svActionNotes').value.trim()};const errors=window.T10XService.validateAction(r,db.service);if(r.coverageRecordId&&!serviceCoverageChoices().some(x=>x.id===r.coverageRecordId&& (r.coverageType==='extension'?x.type==='extension':x.type===r.coverageType)))errors.push('Seçilen teminat referansı bulunamadı veya türle uyuşmuyor.');if(errors.length)return serviceFeedback('action',errors.join(' '));serviceUpsert('action',r);});
  for(const type of ['component','visit','issue','action'])byId({component:'svCompClear',visit:'svVisitClear',issue:'svIssueClear',action:'svActionClear'}[type]).addEventListener('click',()=>clearService(type));
- byId('svIssueComponent').addEventListener('change',()=>serviceUpdateSelects());byId('svActionCoverage').addEventListener('change',serviceRefreshCoverage);
+ byId('svIssueComponent').addEventListener('change',()=>serviceUpdateSelects());byId('svIssueStage').addEventListener('change',()=>{if(byId('svIssueStage').value==='closed')byId('svIssueStatus').value='resolved';else if(byId('svIssueStatus').value==='resolved')byId('svIssueStatus').value='open';});byId('svIssueStatus').addEventListener('change',()=>{if(byId('svIssueStatus').value==='resolved')byId('svIssueStage').value='closed';else if(byId('svIssueStage').value==='closed')byId('svIssueStage').value='reported';});byId('svActionCoverage').addEventListener('change',serviceRefreshCoverage);
  byId('svActionIssue').addEventListener('change',()=>{const i=db.service.issues.find(x=>x.id===byId('svActionIssue').value);if(i){byId('svActionComponent').value=i.componentId||'';if(!byId('svActionVisit').value)byId('svActionVisit').value=i.firstVisitId;}});
  byId('serviceHistoryFilter').addEventListener('change',renderService);
  byId('service').addEventListener('click',e=>{const btn=e.target.closest('[data-sv-edit],[data-sv-delete]');if(!btn)return;const type=btn.dataset.svEdit||btn.dataset.svDelete,id=btn.dataset.svId;if(btn.dataset.svEdit)serviceEdit(type,id);else serviceDelete(type,id);});
@@ -1274,12 +1276,15 @@ function initServiceListeners(){
  ...d.visits.map(x=>['Ziyaret',x.id,x.entryDate,x.odo,x.center,x.status,'','',x.totalCost,x.paidCost,x.documentUrl,x.notes,x.maintenanceId,x.orderNo]),
  ...d.issues.map(x=>['Arıza',x.id,x.reportDate,'',x.title,x.status,x.componentId,x.firstVisitId,'','','',x.symptom,x.relatedIssueId,'']),
  ...d.actions.map(x=>['İşlem',x.id,x.date,'',x.type,x.coverageDecision,x.componentId,x.visitId,x.cost,x.paid,x.documentUrl,x.description,x.issueId,x.coverageRecordId]),
- ...d.components.map(x=>['Bileşen',x.id,'','',x.name,'',x.partNo,'','','','',x.notes,x.revision,''])];
+ ...d.components.map(x=>['Bileşen',x.id,'','',x.name,'',x.partNo,'','','','',x.notes,x.revision,'']),
+ ...d.interactions.map(x=>['Görüşme',x.id,x.date,'',x.description,x.type,'',x.issueId,'','',x.documentUrl,x.contactName,x.channel,'']),
+ ...d.partOrders.map(x=>['Parça tedariki',x.id,x.requestDate,'',x.description||x.partNo,x.status,x.componentId,x.issueId,'','','',x.expectedDate,x.orderNo,x.readyDate]),
+ ...d.followUps.map(x=>['Takip',x.id,x.dueDate,'',x.description,x.status,'',x.issueId,'','','',x.notes,x.doneDate,''])];
  exportCsv('t10x_servis_ariza_parca_kayitlari.csv',['Kayıt türü','ID','Tarih','Kilometre','Başlık / Servis / İşlem','Durum','Bileşen/Parça','Ziyaret','Bedel','Ödenen','Belge','Açıklama','İlişki','Referans'],rows);});
  for(const type of ['component','visit','issue','action'])clearService(type);
 }
 
-function renderAll(){renderMaintenance();renderCoverage();renderService();renderDashboard();renderCharges();renderConsumptionSnapshots();renderTrips();renderSoh();renderAnalytics();renderStress();renderSettings();updateSohPreview();updateChargePreview();renderCrate();renderPlanner();window.T10XInspectionUI?.render();window.T10XPhase5UI?.render()}
+function renderAll(){renderMaintenance();renderCoverage();renderService();window.T10XServiceWorkflowUI?.render();renderDashboard();renderCharges();renderConsumptionSnapshots();renderTrips();renderSoh();renderAnalytics();renderStress();renderSettings();updateSohPreview();updateChargePreview();renderCrate();renderPlanner();window.T10XInspectionUI?.render();window.T10XPhase5UI?.render()}
 
 D.chargeForm.addEventListener('submit',e=>{
   e.preventDefault();const id=D.chargeId.value||uid(),odoUnknown=!!D.chargeOdoUnknown.checked;

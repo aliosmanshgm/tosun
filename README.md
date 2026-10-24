@@ -1,3 +1,28 @@
+# v0.15.0 – Servis Süreç Yönetimi
+
+Bu sürüm, servis ziyareti gerektirmeden şikâyet dosyası açma, servis görüşmelerini, parça tedarik durumunu ve geri dönüş takiplerini aynı dosyada tutma olanağı ekler. Önceki servis ziyareti, arıza, parça değişimi ve belge referanslarının ID'leri değiştirilmez. Yeni veriler `service.interactions`, `service.partOrders`, `service.followUps` altında kaydedilir. Eski arızalardaki `firstVisitId` alanı aynen korunur. **Yeni şikâyette `firstVisitId` zorunlu değildir.**
+
+## Kullanım
+
+1. **Servis & Arızalar → Yeni Şikâyet / Servis Dosyası** bölümünden randevu almadan dosya açın. Durum ve süreç aşamasını ayrı seçin.
+2. **Dosyayı Aç / Gelişme Ekle** ile dosyanın zaman çizelgesini görün. Telefonla görüşmeyi veya ön kontrol bilgisini aynı dosyaya ekleyin.
+3. **Parça temini** bölümünde talep, sipariş, hazır ve takıldı aşamalarını kaydedin.
+4. **Takip görevi** oluşturun; Hatırlatmalar menüsünde ve `.ics` takvim çıktısında görünür.
+5. Gerçek ön kontrol/onarım ziyareti gerçekleştiğinde **Gelişmiş kayıtlar** bölümünden ziyaret ve müdahale ekleyin. Aynı açık sorunu yeni vaka açmadan ilgili dosyaya bağlayın.
+
+### Eski kayıtlar / güvenlik
+
+- `service.visits`, `service.issues`, `service.actions`, `service.components`, `phase5.documents` olduğu gibi taşınır; tüm eski alanlar korunur.
+- Yeni veri şeması 21; v20 dahil eski depolama anahtarlarından geçiş vardır. Bulut senkronizasyonu mevcut `T10XApp` değişiklik olayını kullanır.
+- GitHub'a yüklemeden önce **JSON yedeği alın**. Canlı Firebase ve iPhone Safari testleri kullanıcı ortamında yapılmalıdır.
+- İşlem/servis ziyaretlerinin karşılanması otomatik garanti onayı değildir. Aynı açık dosyaya yapılan tekrar ziyaretler bağımsız arıza olarak sayılmaz.
+
+## Teknik dosyalar
+
+`service-model.js` (veri/validasyon), `service-workflow-ui.js` (yeni ekran ve işlemler), `app.js` (uyumluluk), `phase5-model.js` (hatırlatma/rapor), `index.html` ve `app.css` (arayüz).
+
+---
+
 ## v0.14.2 – Araç Muayene Takibi (22.10.2026)
 
 - **Araç Muayenesi** menüsü: ilk muayene son tarihi varsayılan **18.12.2026**, hem bu menüden hem **Ayarlar** üzerinden düzenlenebilir.

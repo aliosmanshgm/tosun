@@ -9,7 +9,7 @@
   <meta name="apple-mobile-web-app-title" content="T10X Araç" />
   <meta name="mobile-web-app-capable" content="yes" />
   <link rel="manifest" href="manifest.webmanifest" />
-  <title>T10X Araç & Batarya Takip v0.14.2 · Muayene Takibi</title>
+  <title>T10X Araç & Batarya Takip v0.15.0 · Servis Süreç Yönetimi</title>
   <link rel="stylesheet" href="app.css" />
 </head>
 <body>
@@ -291,12 +291,96 @@
     </section>
 
     <section id="service" class="panel service-panel">
-      <div class="section-title"><div><h2>Yetkili Servis, Arıza & Parça Takibi</h2><p>Servis ziyaretlerini, ayrı arıza vakalarını ve yapılan müdahaleleri birbirine bağlayın. Aynı sorunun tekrarlanmasını görün.</p></div><button id="serviceExportCsv" type="button" class="secondary">Servis / Arıza / İşlem CSV İndir</button></div>
-      <div class="info-box"><strong>Nasıl kullanılır?</strong> 1) Servis ziyareti ekleyin. 2) Varsa arızayı o ziyarete bağlayın. 3) Yapılan işlemi ve değişen parçayı kaydedin. Aynı açık arızaya ikinci kez gidiyorsanız yeni arıza açmayıp <strong>mevcut arızayı seçin</strong>. İşlemin garanti/kasko kapsamında karşılanması ayrı bir servis kararıdır; poliçe varlığı otomatik onay sayılmaz.</div>
+      <div class="section-title"><div><h2>Yetkili Servis, Arıza & Parça Takibi</h2><p>Önce şikâyet dosyası açın; servisle görüşmeleri, kontrolü, parça teminini ve kalıcı çözümü aynı dosyada izleyin.</p></div><button id="serviceExportCsv" type="button" class="secondary">Servis / Arıza / İşlem CSV İndir</button></div>
+      <div class="info-box"><strong>Nasıl kullanılır?</strong> 1) Randevu olmasa da servis dosyası açın. 2) Her görüşme, ön kontrol ve parça gelişmesini dosyaya ekleyin. 3) Beklenen dönüş için takip tarihi belirleyin. 4) Gerçek ziyaret ve müdahaleleri gelişmiş kayıtlar bölümüne işleyin. Aynı açık arızaya ikinci kez gidiyorsanız yeni arıza açmayıp <strong>mevcut arızayı seçin</strong>. İşlemin garanti/kasko kapsamında karşılanması ayrı bir servis kararıdır; poliçe varlığı otomatik onay sayılmaz.</div>
       <div id="serviceOverview" class="service-overview" aria-live="polite"></div>
+
+      <article class="card svc-flow-board">
+        <div class="card-head"><div><h2>Servis dosyalarım ve bekleyen işler</h2><p class="muted">Şikâyetiniz randevu olmadan açılabilir. Gelişmeleri dosyaya ekleyin; geçmiş kayıtlar korunur.</p></div></div>
+        <div id="svFlowStats" class="service-overview"></div>
+        <label>Dosya filtresi <select id="svFlowFilter"><option value="open">Açık / takip edilen</option><option value="all">Tüm dosyalar</option><option value="closed">Çözülen</option></select></label>
+        <div id="svFlowCases" class="svc-flow-cases" aria-live="polite"></div>
+        <article id="svFlowDetail" class="svc-flow-detail" hidden><div id="svFlowTimeline"></div></article>
+      </article>
       <div class="service-editor-grid">
+        <form id="serviceIssueForm" class="form-card">
+          <h2 id="serviceIssueTitle">1. Yeni Şikâyet / Servis Dosyası</h2>
+          <input id="svIssueId" type="hidden" />
+          <div class="form-grid maintenance-form-grid">
+            <label>İlk servis ziyareti (isteğe bağlı) <select id="svIssueVisit"></select></label>
+            <label>Arıza bildirim tarihi <input id="svIssueDate" type="date" required /></label>
+            <label class="span-2">Sorunun adı <input id="svIssueName" maxlength="180" required placeholder="Örn. Kamera görüntüsü kesiliyor" /></label>
+            <label>Servis süreci aşaması <select id="svIssueStage">
+<option value="reported">Şikâyet bildirildi</option><option value="awaiting_reply">Servisten dönüş bekleniyor</option><option value="inspection_planned">Ön kontrol planlandı</option><option value="inspected">Ön kontrol yapıldı</option><option value="temporary">Geçici müdahale</option><option value="part_wait">Parça bekleniyor</option><option value="appointment_wait">Randevu bekleniyor</option><option value="repair_planned">Kesin onarım planlandı</option><option value="repair_done">Onarım gerçekleştirildi</option><option value="monitoring">Sonuç takip ediliyor</option><option value="closed">Çözüldü / kapatıldı</option>
+</select></label>
+            <label>Bileşen / parça <select id="svIssueComponent"></select></label>
+            <label>Çözüm durumu <select id="svIssueStatus"><option value="open">Açık</option><option value="investigating">İncelemede</option><option value="monitoring">Takipte</option><option value="resolved">Çözüldü</option><option value="unresolved">Çözülmedi</option></select></label>
+            <label class="span-2">Tekrarlanan önceki arıza (varsa) <select id="svIssueRelated"><option value="">Bağımsız / ilk arıza</option></select></label>
+            <label class="span-2">Belirti / açıklama <textarea id="svIssueSymptom" rows="2" maxlength="4000"></textarea></label>
+            <label class="span-2">Servis sonucu / takip notu <textarea id="svIssueNotes" rows="2" maxlength="4000"></textarea></label>
+          </div>
+          <p class="muted">Randevu henüz verilmemişse servis ziyareti seçmeyin. Dosyaya daha sonra görüşme, parça siparişi ve takip görevi ekleyebilirsiniz.</p>
+          <div class="form-actions"><button type="submit">Servis Dosyasını Kaydet</button><button id="svIssueClear" class="secondary" type="button">Temizle</button></div>
+          <p id="svIssueFeedback" class="maintenance-feedback" role="status"></p>
+        </form>
+
+<details class="svc-form-panel" id="svInteractionPanel"><summary>Servisle Görüşme / Gelişme – formu aç / kapat</summary>
+        <form id="svInteractionForm" class="form-card">
+          <h2>2. Servis görüşmesi / gelişme ekle</h2><input id="svInteractionId" type="hidden" />
+          <div class="form-grid maintenance-form-grid">
+            <label class="span-2">İlgili servis dosyası <select id="svInteractionIssue" required></select></label>
+            <label>Tarih <input id="svInteractionDate" type="date" required /></label>
+            <label>İletişim kanalı <select id="svInteractionChannel"><option value="phone">Telefon</option><option value="trumore">Trumore</option><option value="in_person">Yüz yüze</option><option value="email">E-posta</option><option value="other">Diğer</option></select></label>
+            <label>Gelişme türü <select id="svInteractionType"><option value="complaint">Şikâyet bildirimi</option><option value="response">Servis yanıtı</option><option value="inspection">Ön kontrol</option><option value="temporary">Geçici müdahale</option><option value="call">Görüşme / bilgi</option><option value="appointment">Randevu bilgisi</option><option value="other">Diğer</option></select></label>
+            <label>Görüşülen kişi / servis <input id="svInteractionContact" maxlength="150" placeholder="Opsiyonel" /></label>
+            <label>Verilen randevu tarihi (varsa) <input id="svInteractionAppointment" type="date" /></label>
+            <label>Randevu türü <select id="svInteractionAppointmentType"><option value="inspection">Ön kontrol</option><option value="repair">Kesin onarım / parça değişimi</option><option value="other">Diğer</option></select></label>
+            <label class="span-2">Ne oldu / servis ne söyledi? <textarea id="svInteractionDescription" required maxlength="4000" rows="3" placeholder="Örn. Parça talep edildi, tedarik sonrası aranacağım."></textarea></label>
+            <label class="span-2">Belge / mesaj bağlantısı (isteğe bağlı) <input type="url" id="svInteractionDoc" placeholder="https://drive.google.com/..." /></label>
+          </div>
+          <div class="form-actions"><button type="submit">Gelişmeyi Kaydet</button><button id="svInteractionClear" type="button" class="secondary">Temizle</button></div><p id="svInteractionFeedback" class="maintenance-feedback" role="status"></p>
+        </form>
+</details>
+      </div>
+      <div class="service-editor-grid">
+<details class="svc-form-panel" id="svPartPanel"><summary>Parça Temini – formu aç / kapat</summary>
+        <form id="svPartForm" class="form-card">
+          <h2>3. Parça temini / sipariş takibi</h2><input id="svPartId" type="hidden" />
+          <div class="form-grid maintenance-form-grid">
+            <label class="span-2">İlgili servis dosyası <select id="svPartIssue" required></select></label>
+            <label>Talep tarihi <input id="svPartDate" type="date" required /></label>
+            <label>Durum <select id="svPartStatus"><option value="requested">Talep edildi</option><option value="ordered">Sipariş verildi</option><option value="waiting">Tedarik bekleniyor</option><option value="ready">Parça temin edildi</option><option value="installed">Takıldı</option><option value="cancelled">İptal</option></select></label>
+            <label>Bileşen <select id="svPartComponent"></select></label>
+            <label>Parça adı / numarası <input id="svPartNumber" maxlength="160" placeholder="Bilinmiyorsa bileşeni seçin" /></label>
+            <label>Beklenen temin tarihi <input id="svPartExpected" type="date" /></label>
+            <label>Temin edildiği tarih <input id="svPartReady" type="date" /></label>
+            <label>Servis sipariş numarası <input id="svPartOrderNo" maxlength="120" /></label>
+            <label class="span-2">Açıklama <textarea id="svPartDescription" maxlength="3000" rows="2"></textarea></label>
+          </div>
+          <div class="form-actions"><button type="submit">Parça Kaydını Kaydet</button><button id="svPartClear" type="button" class="secondary">Temizle</button></div><p id="svPartFeedback" class="maintenance-feedback" role="status"></p>
+        </form>
+</details>
+<details class="svc-form-panel" id="svFollowPanel"><summary>Beklenen Dönüş / Takip – formu aç / kapat</summary>
+        <form id="svFollowForm" class="form-card">
+          <h2>4. Beklenen dönüş / takip görevi</h2><input id="svFollowId" type="hidden" />
+          <div class="form-grid maintenance-form-grid">
+            <label class="span-2">İlgili servis dosyası <select id="svFollowIssue" required></select></label>
+            <label>Takip tarihi <input id="svFollowDate" type="date" required /></label>
+            <label>Takip durumu <select id="svFollowStatus"><option value="open">Bekliyor</option><option value="done">Tamamlandı</option><option value="cancelled">İptal</option></select></label>
+            <label class="span-2">Beklenen işlem / taahhüt <textarea id="svFollowDescription" rows="2" required maxlength="3000" placeholder="Örn. Servisi arayıp parça durumunu sor."></textarea></label>
+            <label>Tamamlanma tarihi <input id="svFollowDoneDate" type="date" /></label>
+            <label class="span-2">Not <textarea id="svFollowNotes" rows="2" maxlength="2000"></textarea></label>
+          </div>
+          <div class="form-actions"><button type="submit">Takibi Kaydet</button><button id="svFollowClear" type="button" class="secondary">Temizle</button></div><p id="svFollowFeedback" class="maintenance-feedback" role="status"></p>
+        </form>
+</details>
+      </div>
+      <details id="svLegacyDetails" class="service-advanced"><summary>Gelişmiş kayıtlar · Gerçek servis ziyaretleri, bileşen kataloğu ve yapılan müdahaleler</summary>
+        <p class="muted">Ön kontrol veya kesin onarım gerçekleştiğinde ziyaret kaydı oluşturun. Buradaki eski kayıtlarınız değiştirilmez.</p>
+        <div class="service-editor-grid">
+
         <form id="serviceVisitForm" class="form-card">
-          <h2 id="serviceVisitTitle">1. Servis ziyareti ekle</h2>
+          <h2 id="serviceVisitTitle">Servis ziyareti / ön kontrol / onarım randevusu</h2>
           <input id="svVisitId" type="hidden" />
           <div class="form-grid maintenance-form-grid">
             <label>Giriş tarihi <input id="svVisitEntry" type="date" required /></label>
@@ -328,26 +412,10 @@
           <p id="svCompFeedback" class="maintenance-feedback" role="status"></p>
           <div id="serviceComponentList" class="service-history" aria-live="polite"></div>
         </form>
-      </div>
-      <div class="service-editor-grid">
-        <form id="serviceIssueForm" class="form-card">
-          <h2 id="serviceIssueTitle">2. Arıza / şikâyet vakası</h2>
-          <input id="svIssueId" type="hidden" />
-          <div class="form-grid maintenance-form-grid">
-            <label>İlk bildirilen servis ziyareti <select id="svIssueVisit" required></select></label>
-            <label>Arıza bildirim tarihi <input id="svIssueDate" type="date" required /></label>
-            <label class="span-2">Sorunun adı <input id="svIssueName" maxlength="180" required placeholder="Örn. Kamera görüntüsü kesiliyor" /></label>
-            <label>Bileşen / parça <select id="svIssueComponent"></select></label>
-            <label>Durum <select id="svIssueStatus"><option value="open">Açık</option><option value="investigating">İncelemede</option><option value="monitoring">Takipte</option><option value="resolved">Çözüldü</option><option value="unresolved">Çözülmedi</option></select></label>
-            <label class="span-2">Tekrarlanan önceki arıza (varsa) <select id="svIssueRelated"><option value="">Bağımsız / ilk arıza</option></select></label>
-            <label class="span-2">Belirti / açıklama <textarea id="svIssueSymptom" rows="2" maxlength="4000"></textarea></label>
-            <label class="span-2">Servis sonucu / takip notu <textarea id="svIssueNotes" rows="2" maxlength="4000"></textarea></label>
-          </div>
-          <div class="form-actions"><button type="submit">Arızayı Kaydet</button><button id="svIssueClear" class="secondary" type="button">Temizle</button></div>
-          <p id="svIssueFeedback" class="maintenance-feedback" role="status"></p>
-        </form>
+        </div>
+        <div class="service-editor-grid">
         <form id="serviceActionForm" class="form-card">
-          <h2 id="serviceActionTitle">3. Yapılan işlem / parça değişimi</h2>
+          <h2 id="serviceActionTitle">Yapılan işlem / parça değişimi</h2>
           <input id="svActionId" type="hidden" />
           <div class="form-grid maintenance-form-grid">
             <label>İlgili servis ziyareti <select id="svActionVisit" required></select></label>
@@ -370,7 +438,9 @@
           <div class="form-actions"><button type="submit">İşlemi Kaydet</button><button id="svActionClear" class="secondary" type="button">Temizle</button></div>
           <p id="svActionFeedback" class="maintenance-feedback" role="status"></p>
         </form>
-      </div>
+        </div>
+      </details>
+
       <article class="card service-results">
         <div class="card-head"><div><h2>Tekrarlayan arızalar ve değişimler</h2><p class="muted">Aynı bileşendeki bağımsız arıza vakaları ile parça değişim sayısı farklı göstergelerdir.</p></div><span class="badge neutral" id="serviceRecurringCount">0 tekrar</span></div>
         <div id="serviceRepeatList" class="service-history" aria-live="polite"></div>
@@ -1021,7 +1091,7 @@
     </section>
   </main>
 
-  <footer>v0.14.2 · Araç Muayene Takibi + Drive Belge Seçimi + Belgeler, Servis Raporları ve Takvim Hatırlatmaları + Kolay Günlük Kayıt · Engineer Edition · Tek kullanıcı giriş kapısı · Firebase Sync · GitHub Pages · iPhone uyumlu · km/SOC eksik geçmiş kayıt desteği · süre→ortalama güç/C-rate</footer>
+  <footer>v0.15.0 · Servis Süreç Yönetimi + Drive Belge Seçimi + Belgeler, Servis Raporları ve Takvim Hatırlatmaları + Kolay Günlük Kayıt · Engineer Edition · Tek kullanıcı giriş kapısı · Firebase Sync · GitHub Pages · iPhone uyumlu · km/SOC eksik geçmiş kayıt desteği · süre→ortalama güç/C-rate</footer>
   </div>
 
   <script src="weather.js"></script>
@@ -1036,6 +1106,7 @@
   <script src="inspection-model.js"></script>
   <script src="phase5-model.js"></script>
   <script src="app.js"></script>
+  <script src="service-workflow-ui.js"></script>
   <script src="inspection-ui.js"></script>
   <script src="phase5-ui.js"></script>
   <script type="module" src="firebase-sync.js"></script>

@@ -151,3 +151,12 @@ Ardından var olan diğer `tests/*.test.js` dosyalarıyla hesaplama regresyon te
 - Garanti/kasko `coverageRecordId` bağları teminat kararından bağımsız tutulur; poliçe referansı kaldırılırsa işlem kaydı korunur, "bağlı kayıt bulunamıyor" olarak belirtilir.
 - Servis ziyaretini/arıza vakasını/bileşeni silmek, ona bağlı kayıtlar mevcutken engellenir. Tarih ve maliyet doğrulamaları, belge URL'sinin HTTPS olması, aynı bileşen/parça katalog mükerrerliği kontrol edilir.
 - `service-model.js` CommonJS + tarayıcı modülünde test edilir; tüm önceki Node model testleri ve ağsız mobil Chromium servis kaydı akışı çalıştırılmıştır. Canlı Firebase / gerçek iOS oturumu bu testlerin kapsamı dışındadır.
+
+## v0.15.0 - Servis Surec Yonetimi
+
+- `issues.firstVisitId` yeni kayitlarda opsiyonel; eski baglantilar korunur.
+- Yeni diziler: `service.interactions`, `service.partOrders`, `service.followUps`; tumu benzersiz kayit kimlikleriyle iliskili servis dosyasina baglidir.
+- Is emri/gercek servis ziyareti ayri, devam eden sikayet ayri tutulur. Ayni acik sikayete ait birden fazla gorusme ve ziyaret bagimsiz ariza sayisini artirmaz.
+- Tarihli acik takip gorevleri, varsa tahmini parca temin tarihleri ve verilen randevu tarihleri `phase5-model.js` tarafindan hatirlatmalara/ICS'ye dahil edilir. Tarihlerin gercekligi ve randevunun servis tarafindan teyidi kullanici verisine baglidir.
+- Uygulama tasariminda `schemaVersion:21`, yerel anahtar `t10xBatteryTracker_v21`; v20 dahil gecmis anahtarlar okunur. Bulut ve yerel veri arasinda otomatik birlestirme yapilmaz; zaman damgasi temelli mevcut Firebase sync protokolu korunur.
+- Testler: eski v20 veri migrasyonu, randevusuz sikayet, gorsusme, tedarik, takip, takvim, kimlik koruma ve 390 piksel mobil gorunum. Canli Firebase/iPhone Safari uctan uca testi yapilmamistir.

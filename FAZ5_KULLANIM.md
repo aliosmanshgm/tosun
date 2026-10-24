@@ -27,3 +27,7 @@
 4. **Belge Referansını Kaydet** düğmesine basın. Google Drive'a ikinci kez dosya yüklenmez.
 
 Dosyanın adını dilerseniz dosya adından farklı, daha açıklayıcı bir belge başlığı olarak düzenleyebilirsiniz. Belge listesi yalnız uygulamanın erişebildiği klasörü kapsar. Firebase'de kaydettiğiniz referanslar Drive yetkisi olmadan da listelenir.
+
+
+## v0.15.0 servis takibi
+Şikâyet dosyasını servis randevusu olmadan açın. Gelişmeleri ve parça teminini bu dosyaya ekleyin. Takip tarihleri Hatırlatmalar sayfasına ve ICS çıktısına dahil edilir.

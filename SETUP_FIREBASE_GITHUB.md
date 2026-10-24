@@ -212,3 +212,7 @@ GitHub'a v0.9.6 dosyalarını yükledikten sonra önceki service worker önbelle
 5. İlişkili servis belgelerini herkese açık GitHub'a değil, erişimi sınırlı Google Drive vb. bir alana yükleyip bağlantılarını saklayın.
 
 **Önemli:** Servis ve poliçe kayıtlarındaki açıklamalar gerçek belgeleri esas alır. Poliçe seçmek, garanti kapsamının otomatik onaylandığı anlamına gelmez.
+
+## v0.15.0 servis surec yonetimi
+
+Onceki surumdeki JSON yedegini indirin. Yeni ZIP klasorunun **tum dosyalarini** GitHub deposunun kokune ekleyin. Ozellikle `service-workflow-ui.js` dosyasi gereklidir. `service-model.js`, `phase5-model.js`, `app.js`, `app.css`, `index.html` ve `sw.js` de birlikte guncellenmelidir. Firebase Realtime Database kurallari degismedi. Onceki v20 veri modeli yeni v21 yapisina donusturulurken eski servis, ariza ve belge kimlikleri korunur. Canli hesaptan gelen kayitlarin geldigi senkron durumunu kontrol edin; yeni denemelere baslamadan once JSON yedek alin.
